@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createPuzzle, levels, targetFor, shuffled } from '../src/puzzle.js';
 
-test('all four levels use the advertised counts across photo orientations', () => {
+test('all difficulty levels use the advertised counts across photo orientations', () => {
   for (const [width, height] of [[1800, 1200], [1200, 1800], [1000, 1000], [3000, 300]]) {
     for (const [level, data] of Object.entries(levels)) {
       const puzzle = createPuzzle(width, height, level, 42);
       assert.equal(puzzle.pieces.length, data.count);
       assert.equal(puzzle.cols * puzzle.rows, data.count);
-      assert.equal(puzzle.cellWidth * puzzle.cols, width);
-      assert.equal(puzzle.cellHeight * puzzle.rows, height);
+      assert.ok(Math.abs(puzzle.cellWidth * puzzle.cols - width) < 1e-9);
+      assert.ok(Math.abs(puzzle.cellHeight * puzzle.rows - height) < 1e-9);
     }
   }
 });

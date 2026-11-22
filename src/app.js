@@ -1,15 +1,16 @@
-import { PuzzleBoard } from './board.js?v=workshop';
-import { loadImage, prepareImage, sample } from './images.js';
-import { levels, shuffled } from './puzzle.js';
+import { PuzzleBoard } from './board.js?v=dotted-board';
+import { loadImage, prepareImage, sample, samples } from './images.js?v=dotted-board';
+import { levels, shuffled } from './puzzle.js?v=quiet-gallery';
 import { finishGame, getActive, getCompleted, saveActive } from './storage.js';
 
 const $ = (id) => document.getElementById(id);
 const fileLimit = 20 * 1024 * 1024;
 const uploadTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'];
-const libraryDate = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' });
+const libraryDate = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
 const galleryUrls = [];
 const ready = restore();
 let source = null;
+let selectedSample = sample;
 let uploadVersion = 0;
 let processing = false;
 let starting = false;
@@ -42,17 +43,17 @@ function setSource(data) {
   if (sourceUrl) URL.revokeObjectURL(sourceUrl);
   source = data;
   sourceUrl = data ? URL.createObjectURL(data.thumbnail) : undefined;
-  $('source-photo').src = sourceUrl ?? sample.url;
-  $('source-name').textContent = data?.name ?? sample.name + ' · пример';
-  $('source-name').title = $('source-name').textContent;
+  $('source-photo').src = sourceUrl ?? selectedSample.url;
+  $('source-name').textContent = data?.name ?? selectedSample.name;
+  $('source-name').title = $('source-name').textContent.toLowerCase();
   $('reset-photo').hidden = !data;
-  $('drop-title').textContent = data ? 'Заменить фото' : 'Добавить своё фото';
+  $('drop-title').textContent = data ? 'replace photo' : 'add your own photo';
 }
 
 function refreshStart() {
   $('start-game').disabled = processing || starting;
-  $('start-game').querySelector('span').textContent = starting ? 'Готовим пазл…' : 'Начать сборку';
-  $('drop-help').textContent = processing ? 'Загружаем изображение…' : 'Перетащите сюда или выберите файл';
+  $('start-game').querySelector('span').textContent = starting ? 'preparing your puzzle…' : 'start puzzle';
+  $('drop-help').textContent = processing ? 'loading your image…' : 'drag it here or choose a file';
 }
 
 async function chooseFile(file) {
@@ -63,16 +64,16 @@ async function chooseFile(file) {
   report('upload-error');
   try {
     if (!uploadTypes.includes(file.type) && (file.type || !/\.(jpe?g|png|webp|avif|gif)$/i.test(file.name))) {
-      throw new Error('Подойдут файлы JPG, PNG, WebP, AVIF или GIF.');
+      throw new Error('choose a JPG, PNG, WebP, AVIF or GIF file.');
     }
-    if (file.size > fileLimit) throw new Error('Файл больше 20 МБ. Выберите файл поменьше.');
+    if (file.size > fileLimit) throw new Error('choose a file that is 20 MB or smaller.');
     const filename = file.name;
-    const name = filename.replace(/\.[^.]+$/, '').trim() || 'Моя картинка';
+    const name = filename.replace(/\.[^.]+$/, '').trim() || 'my image';
     const data = await prepareImage(file, filename, name);
     if (version === uploadVersion) setSource(data);
   } catch (error) {
     if (version === uploadVersion) {
-      report('upload-error', error instanceof DOMException ? 'Не удалось открыть изображение. Попробуйте другой файл.' : error.message);
+      report('upload-error', error instanceof DOMException ? 'this image could not be opened. try a different file.' : error.message);
     }
   } finally {
     if (version === uploadVersion) {
@@ -86,7 +87,7 @@ function showResume() {
   $('resume-panel').hidden = !active;
   if (!active) return;
   $('resume-name').textContent = active.name;
-  $('resume-progress').textContent = 'В процессе · ' + active.placed.length + ' из ' + levels[active.level].count;
+  $('resume-progress').textContent = 'in progress · ' + active.placed.length + ' of ' + levels[active.level].count;
 }
 
 async function restore() {
@@ -96,7 +97,7 @@ async function restore() {
     showResume();
     showLibraryCount(completed.length);
   } catch {
-    report('upload-error', 'Хранилище браузера недоступно. Картинки и прогресс могут не сохраниться.');
+    report('upload-error', 'browser storage is unavailable. your images and progress may not be saved.');
   }
 }
 
@@ -106,7 +107,7 @@ async function startGame() {
   refreshStart();
   await ready;
   if (active?.placed.length || active?.loose.length) {
-    if (!window.confirm('Начать новый пазл? Текущая незаконченная сборка будет заменена.')) {
+    if (!window.confirm('start a new puzzle? this will replace your unfinished puzzle.')) {
       starting = false;
       refreshStart();
       return;
@@ -117,9 +118,9 @@ async function startGame() {
   try {
     let data = source;
     if (!data) {
-      const response = await fetch(sample.url);
-      if (!response.ok) throw new Error('Не удалось загрузить пример.');
-      data = await prepareImage(await response.blob(), sample.filename, sample.name);
+      const response = await fetch(selectedSample.url);
+      if (!response.ok) throw new Error('the gallery image could not be loaded.');
+      data = await prepareImage(await response.blob(), selectedSample.filename, selectedSample.name);
     }
     const level = document.querySelector('input[name="level"]:checked').value;
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
@@ -130,14 +131,14 @@ async function startGame() {
     try {
       await saveActive(next, true);
     } catch {
-      storageWarning = 'Не удалось сохранить прогресс. Проверьте, доступно ли хранилище браузера.';
+      storageWarning = 'progress could not be saved. check that browser storage is available.';
     }
     active = next;
     game = next;
     showResume();
     location.hash = 'play';
   } catch {
-    report('upload-error', 'Не удалось создать пазл. Попробуйте выбрать другую картинку.');
+    report('upload-error', 'the puzzle could not be created. try a different image.');
   } finally {
     starting = false;
     refreshStart();
@@ -176,7 +177,7 @@ function galleryCard(entry) {
   const figure = document.createElement('button');
   figure.type = 'button';
   figure.className = 'gallery-photo';
-  figure.setAttribute('aria-label', 'Открыть картинку «' + entry.name + '»');
+  figure.setAttribute('aria-label', 'preview ' + entry.name);
   figure.addEventListener('click', () => openPreview(entry));
   const image = document.createElement('img');
   const thumbnailUrl = URL.createObjectURL(entry.thumbnail);
@@ -196,8 +197,8 @@ function galleryCard(entry) {
   heading.append(name, caption);
   const download = document.createElement('a');
   download.className = 'icon-button';
-  download.title = 'Скачать изображение';
-  download.setAttribute('aria-label', 'Скачать «' + entry.name + '»');
+  download.title = 'download image';
+  download.setAttribute('aria-label', 'download ' + entry.name);
   const originalUrl = URL.createObjectURL(entry.original);
   galleryUrls.push(originalUrl);
   downloadFor(download, entry, originalUrl);
@@ -220,7 +221,7 @@ async function renderLibrary(version) {
     entries.sort((a, b) => b.completedAt - a.completedAt);
     $('gallery').append(...entries.map(galleryCard));
   } catch {
-    if (version === routeVersion) report('library-error', 'Не удалось открыть библиотеку. Проверьте, доступно ли хранилище браузера.');
+    if (version === routeVersion) report('library-error', 'the collection could not be opened. check that browser storage is available.');
   }
 }
 
@@ -235,7 +236,7 @@ function showFinish(state, message) {
 }
 
 function persistCompletion(current) {
-  showFinish('saving', 'Сохраняем картинку в библиотеку…');
+  showFinish('saving', 'saving to your collection…');
   saveQueue = saveQueue.then(async () => {
     try {
       await finishGame(current);
@@ -244,12 +245,12 @@ function persistCompletion(current) {
         if (active?.id === current.id) active = undefined;
         report('game-error');
         showResume();
-        showFinish('saved', 'Картинка добавлена в библиотеку.');
+        showFinish('saved', 'saved to your collection.');
       }
       showLibraryCount((await getCompleted()).length);
     } catch {
       if (game?.id === current.id && !game.saved) {
-        showFinish('error', 'Не удалось сохранить картинку. Её можно скачать сейчас.');
+        showFinish('error', 'this puzzle could not be saved. you can still download the image.');
       }
     }
   });
@@ -270,7 +271,7 @@ function onBoardChange(progress, done) {
       await saveActive(current);
       if (game?.id === current.id) report('game-error');
     } catch {
-      if (game?.id === current.id) report('game-error', 'Не удалось сохранить прогресс в этом браузере.');
+      if (game?.id === current.id) report('game-error', 'progress could not be saved in this browser.');
     }
   });
 }
@@ -281,15 +282,14 @@ async function openGame(current, version) {
   if (version !== routeVersion) return;
   puzzleBoard?.destroy();
   $('finish-panel').hidden = true;
-  $('game-title').textContent = current.name;
   const level = levels[current.level];
-  $('game-level').textContent = level.label + ' · ' + level.count + (level.count === 192 ? ' детали' : ' деталей');
+  $('game-level').textContent = level.label + ' · ' + level.count + ' pieces';
   $('game-feedback').textContent = '';
   game = current;
   puzzleBoard = new PuzzleBoard(current, image, onBoardChange);
   puzzleBoard.resize();
   if (current.completedAt) {
-    if (current.saved) showFinish('saved', 'Картинка добавлена в библиотеку.');
+    if (current.saved) showFinish('saved', 'saved to your collection.');
     else persistCompletion(current);
   }
   $('game-title').focus({ preventScroll: true });
@@ -322,50 +322,97 @@ async function route() {
       await openGame(game ?? active, version);
       if (version === routeVersion) puzzleBoard?.resize();
     } catch {
-      if (version === routeVersion) report('game-error', 'Не удалось открыть сохранённый пазл.');
+      if (version === routeVersion) report('game-error', 'the saved puzzle could not be opened.');
     }
     return;
   }
   showView('create');
   if (hash === 'setup') {
-    $('setup').scrollIntoView({ block: 'start' });
-    $('setup-title').focus({ preventScroll: true });
+    focusSection('setup', 'setup-title');
+  } else if (hash === 'puzzles') {
+    focusSection('puzzles', 'catalog-title');
   } else if (hash === 'create' || hash === 'play') {
     window.scrollTo(0, 0);
     $('hero-title').focus({ preventScroll: true });
   }
 }
 
-$('hero-upload').addEventListener('click', () => $('file').click());
-$('drop-zone').addEventListener('click', () => $('file').click());
+function focusSection(section, heading) {
+  $(section).scrollIntoView({ block: 'start' });
+  $(heading).focus({ preventScroll: true });
+}
+
+function clearUpload() {
+  uploadVersion += 1;
+  processing = false;
+  setSource(null);
+  report('upload-error');
+  refreshStart();
+}
+
+function chooseSample(event, entry) {
+  if (starting) {
+    event.preventDefault();
+    return;
+  }
+  selectedSample = entry;
+  clearUpload();
+  if (location.hash === '#setup') {
+    event.preventDefault();
+    focusSection('setup', 'setup-title');
+  }
+}
+
+function renderCatalog() {
+  const template = $('catalog-card');
+  const cards = samples.map((entry) => {
+    const card = template.content.firstElementChild.cloneNode(true);
+    const image = card.querySelector('img');
+    image.width = entry.width;
+    image.height = entry.height;
+    image.src = entry.url;
+    const link = card.querySelector('a');
+    link.setAttribute('aria-label', 'set up ' + entry.name);
+    link.addEventListener('click', (event) => chooseSample(event, entry));
+    return card;
+  });
+  template.after(...cards);
+  $('catalog-count').textContent = cards.length + (cards.length === 1 ? ' image' : ' images');
+}
+
+function renderLevels() {
+  const template = $('level-option');
+  const options = Object.entries(levels).map(([key, { label, count }]) => {
+    const option = template.content.firstElementChild.cloneNode(true);
+    const radio = option.querySelector('input');
+    radio.value = key;
+    radio.defaultChecked = key === 'easy';
+    option.querySelector('.level-label').textContent = label;
+    option.querySelector('small').textContent = count + ' pieces';
+    return option;
+  });
+  $('level-options').append(...options);
+  const counts = Object.values(levels).map(({ count }) => count);
+  $('masthead-range').textContent = Math.min(...counts) + '–' + Math.max(...counts) + ' pieces';
+}
+
+for (const id of ['hero-upload', 'catalog-upload', 'drop-zone']) {
+  $(id).addEventListener('click', () => $('file').click());
+}
 $('file').addEventListener('change', (event) => {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
-  if (location.hash === '#setup') $('setup').scrollIntoView({ block: 'start' });
+  if (location.hash === '#setup') focusSection('setup', 'setup-title');
   else location.hash = 'setup';
   chooseFile(file);
 });
 $('reset-photo').addEventListener('click', () => {
-  uploadVersion += 1;
-  processing = false;
-  report('upload-error');
-  setSource(null);
-  refreshStart();
+  if (starting) return;
+  clearUpload();
   $('drop-zone').focus();
 });
-$('sample-link').addEventListener('click', (event) => {
-  uploadVersion += 1;
-  processing = false;
-  setSource(null);
-  report('upload-error');
-  refreshStart();
-  if (location.hash === '#setup') {
-    event.preventDefault();
-    $('setup').scrollIntoView({ block: 'start' });
-    $('setup-title').focus({ preventScroll: true });
-  }
-});
+$('sample-link').addEventListener('click', (event) => chooseSample(event, sample));
 
 const dropZone = $('drop-zone');
 dropZone.addEventListener('dragover', (event) => {
@@ -390,5 +437,7 @@ $('preview-dialog').addEventListener('close', () => {
   previewUrl = undefined;
   $('preview-photo').removeAttribute('src');
 });
+renderCatalog();
+renderLevels();
 window.addEventListener('hashchange', route);
 route();

@@ -1,8 +1,28 @@
 export const sample = {
-  name: 'Домик у озера',
-  filename: 'Домик у озера.jpg',
-  url: './assets/lake-cottage.jpg',
+  name: 'a quiet afternoon',
+  filename: 'quiet-afternoon.jpg',
+  url: './assets/quiet-afternoon.jpg',
+  width: 736,
+  height: 965,
 };
+
+export const samples = [
+  sample,
+  {
+    name: 'coffee and pages',
+    filename: 'coffee-and-pages.jpg',
+    url: './assets/coffee-and-pages.jpg',
+    width: 736,
+    height: 981,
+  },
+  {
+    name: 'the road to the sea',
+    filename: 'road-to-the-sea.webp',
+    url: './assets/road-to-the-sea.webp',
+    width: 1080,
+    height: 1080,
+  },
+];
 
 export function loadImage(source) {
   const url = typeof source === 'string' ? source : URL.createObjectURL(source);
@@ -22,7 +42,7 @@ function raster(image, maxSide) {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new Error('Image encoding failed'));
+      else reject(new Error('this image could not be prepared'));
     }, 'image/png');
   });
 }
@@ -31,7 +51,7 @@ export async function prepareImage(original, filename, name) {
   const image = await loadImage(original);
   const ratio = Math.max(image.width, image.height) / Math.min(image.width, image.height);
   if (ratio > 8 || Math.min(image.width, image.height) < 12) {
-    throw new Error('Выберите картинку с пропорциями до 8:1 и сторонами от 12 пикселей.');
+    throw new Error('use an image that is at least 12 pixels on each side, with an aspect ratio no wider or taller than 8:1.');
   }
   const [playable, thumbnail] = await Promise.all([raster(image, 1800), raster(image, 400)]);
   return { name, filename, original, playable, thumbnail };

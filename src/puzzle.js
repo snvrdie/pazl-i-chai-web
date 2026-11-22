@@ -1,8 +1,10 @@
 export const levels = {
-  easy: { label: 'Лёгкий', count: 12 },
-  medium: { label: 'Средний', count: 48 },
-  hard: { label: 'Сложный', count: 108 },
-  expert: { label: 'Очень сложный', count: 192 },
+  easy: { label: 'beginner', count: 12 },
+  relaxed: { label: 'easy', count: 24 },
+  medium: { label: 'medium', count: 48 },
+  hard: { label: 'hard', count: 108 },
+  advanced: { label: 'advanced', count: 150 },
+  expert: { label: 'expert', count: 192 },
 };
 
 function gridFor(count, aspect) {

@@ -1,24 +1,22 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f3e3c7">
-  <meta name="description" content="Превратите любимую фотографию в пазл и сохраните собранную картинку в свою библиотеку.">
-  <title>PuzzleMood — уютные пазлы онлайн</title>
+  <meta name="theme-color" content="#eae9e2">
+  <meta name="description" content="a quiet place to solve jigsaw puzzles. pick an image from the gallery or turn a photo of your own into a puzzle.">
+  <title>puzzlemood — online jigsaw puzzles</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=workshop">
-  <script type="module" src="./src/app.js?v=workshop"></script>
+  <link rel="stylesheet" href="./style.css?v=dotted-board">
+  <script type="module" src="./src/app.js?v=dotted-board"></script>
 </head>
 <body>
   <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M4 5h6V4a2 2 0 1 1 4 0v1h5v5h1a2 2 0 1 1 0 4h-1v5h-6v-1a2 2 0 1 0-4 0v1H4v-5h1a2 2 0 1 0 0-4H4z"/></symbol>
     <symbol id="i-library" viewBox="0 0 24 24"><rect x="6" y="3" width="15" height="15" rx="2"/><path d="M17 21H5a2 2 0 0 1-2-2V7m3 8 4-4 3 3 3-3 5 5"/><circle cx="15.5" cy="7.5" r="1"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-4 4 4-4 4 4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-4-4 4 4 4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m3 17 5-5 4 4 4-5 5 6"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.55.83l9.5-6.5a1 1 0 0 0 0-1.66l-9.5-6.5A1 1 0 0 0 8 5.5Z" fill="currentColor" stroke-width="0"/></symbol>
-    <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 8h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8Zm13 1h2a2.5 2.5 0 0 1 0 5h-2M3 21h16M8 5V3m5 2V3"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
@@ -31,14 +29,12 @@
   </svg>
   <header class="site-header">
     <div class="wrap header-inner">
-      <a class="brand" href="#create" aria-label="PuzzleMood, главная">
-        <span class="brand-mark"><svg class="icon"><use href="#i-puzzle"/></svg></span>
-        <span>PuzzleMood</span>
-      </a>
-      <nav class="nav" aria-label="Разделы">
-        <a id="nav-create" href="#create" aria-current="page"><svg class="icon"><use href="#i-puzzle"/></svg>Собрать пазл</a>
-        <a id="nav-library" href="#library"><svg class="icon"><use href="#i-library"/></svg>Библиотека<span id="library-count" class="nav-count" hidden></span></a>
+      <a class="brand" href="#create" aria-label="puzzlemood home">puzzlemood.</a>
+      <nav class="nav" aria-label="main navigation">
+        <a id="nav-create" href="#puzzles" aria-current="page">explore</a>
+        <a id="nav-library" href="#library">my collection<span id="library-count" class="nav-count" hidden></span></a>
       </nav>
+      <span id="masthead-range" class="caption masthead-range"></span>
     </div>
   </header>
 
@@ -46,57 +42,90 @@
     <section id="create-view" aria-labelledby="hero-title">
       <div class="hero">
         <div class="hero-copy">
-          <div class="hero-note"><svg class="icon"><use href="#i-puzzle"/></svg> Мастерская пазлов</div>
-          <h1 id="hero-title" tabindex="-1">Собери картинку <span>по кусочкам.</span></h1>
-          <p>Любимая фотография, четыре уровня сложности и немного времени для себя.</p>
+          <p class="hero-note">online jigsaw puzzles</p>
+          <h1 id="hero-title" tabindex="-1">piece by<br><em>piece.</em></h1>
+          <p class="hero-description">pick a picture, find your pieces, and take your time. play with an image from the gallery or make a puzzle from one of your own.</p>
           <div class="hero-actions">
-            <button id="hero-upload" class="button primary" type="button"><svg class="icon"><use href="#i-upload"/></svg>Загрузить фото</button>
-            <a id="sample-link" class="button secondary" href="#setup"><svg class="icon"><use href="#i-play"/></svg>Попробовать пример</a>
+            <a class="button primary" href="#puzzles">find your puzzle</a>
+            <button id="hero-upload" class="button text-button" type="button"><svg class="icon"><use href="#i-upload"/></svg>upload a photo</button>
           </div>
         </div>
-        <figure class="workshop-scene">
-          <img src="./assets/puzzle-workshop.jpg" width="1536" height="1024" fetchpriority="high"
-            alt="Рисованная мастерская с коробками пазлов, арочным окном и деталями на деревянной стойке">
+        <figure class="hero-figure">
+          <a id="sample-link" class="hero-print" href="#setup" aria-label="set up the featured puzzle">
+            <img src="./assets/quiet-afternoon.jpg" width="736" height="965" fetchpriority="high"
+              alt="an overhead view of a person and a ginger cat on a patterned rug">
+          </a>
+          <figcaption class="caption">featured puzzle</figcaption>
         </figure>
       </div>
 
       <aside id="resume-panel" class="resume-panel" hidden>
         <div><strong id="resume-name"></strong><span id="resume-progress"></span></div>
-        <a class="button secondary" href="#play"><svg class="icon"><use href="#i-play"/></svg>Продолжить</a>
+        <a class="button secondary" href="#play"><svg class="icon"><use href="#i-play"/></svg>resume puzzle</a>
       </aside>
 
+      <section id="puzzles" class="catalog" aria-labelledby="catalog-title">
+        <div class="section-heading">
+          <div>
+            <p class="caption section-note">the gallery</p>
+            <h2 id="catalog-title" tabindex="-1">something to piece together</h2>
+          </div>
+          <p id="catalog-count" class="caption"></p>
+        </div>
+        <div class="catalog-grid">
+          <template id="catalog-card">
+            <article class="catalog-card">
+              <a href="#setup">
+                <span class="catalog-image"><img alt="" loading="lazy"></span>
+              </a>
+            </article>
+          </template>
+          <div class="catalog-upload">
+            <svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>
+            <h3>make it yours</h3>
+            <button id="catalog-upload" class="button secondary" type="button">choose a photo</button>
+          </div>
+        </div>
+      </section>
+
       <section id="setup" class="setup" aria-labelledby="setup-title">
-        <div class="setup-heading">
-          <h2 id="setup-title" tabindex="-1">Новый пазл</h2>
-          <span class="ink-strokes" aria-hidden="true"></span>
+        <div class="section-heading">
+          <h2 id="setup-title" tabindex="-1">set up your puzzle</h2>
         </div>
         <div class="setup-card">
           <div class="picture-settings">
-            <h3>Картинка</h3>
+            <div class="source-info">
+              <div class="source-image">
+                <img id="source-photo" src="./assets/quiet-afternoon.jpg" alt="" width="736" height="965" loading="lazy">
+              </div>
+              <div class="source-caption">
+                <span id="source-name">a quiet afternoon</span>
+                <button id="reset-photo" class="icon-button" type="button" title="restore the gallery image" aria-label="restore the gallery image" hidden><svg class="icon"><use href="#i-close"/></svg></button>
+              </div>
+            </div>
             <input id="file" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,.jpg,.jpeg,.png,.webp,.avif,.gif" hidden>
             <button id="drop-zone" class="drop-zone" type="button">
-              <span class="upload-mark"><svg class="icon"><use href="#i-upload"/></svg></span>
-              <span><strong id="drop-title">Добавить своё фото</strong><small id="drop-help">Перетащите сюда или выберите файл</small></span>
+              <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+              <span><strong id="drop-title">add your own photo</strong><small id="drop-help">drag it here or choose a file</small></span>
             </button>
-            <div id="source-info" class="source-info">
-              <img id="source-photo" src="./assets/lake-cottage.jpg" alt="" width="44" height="36">
-              <span id="source-name">Домик у озера · пример</span>
-              <button id="reset-photo" class="icon-button" type="button" title="Вернуть пример" aria-label="Вернуть пример" hidden><svg class="icon"><use href="#i-close"/></svg></button>
-            </div>
             <p id="upload-error" class="error" role="alert" hidden></p>
           </div>
-          <fieldset class="level-settings">
-            <legend>Сложность</legend>
-            <div class="levels">
-              <label class="level"><input name="level" type="radio" value="easy" checked><span class="level-body"><i class="level-art art-easy" aria-hidden="true"></i><span><strong>Лёгкий</strong><small>12 деталей</small></span></span></label>
-              <label class="level"><input name="level" type="radio" value="medium"><span class="level-body"><i class="level-art art-medium" aria-hidden="true"></i><span><strong>Средний</strong><small>48 деталей</small></span></span></label>
-              <label class="level"><input name="level" type="radio" value="hard"><span class="level-body"><i class="level-art art-hard" aria-hidden="true"></i><span><strong>Сложный</strong><small>108 деталей</small></span></span></label>
-              <label class="level"><input name="level" type="radio" value="expert"><span class="level-body"><i class="level-art art-expert" aria-hidden="true"></i><span><strong>Очень сложный</strong><small>192 детали</small></span></span></label>
+          <div class="setup-settings">
+            <fieldset class="level-settings">
+              <legend>difficulty</legend>
+              <div id="level-options" class="levels">
+                <template id="level-option">
+                  <label class="level">
+                    <input name="level" type="radio">
+                    <span class="level-body"><span class="level-label"></span><small></small></span>
+                  </label>
+                </template>
+              </div>
+            </fieldset>
+            <div class="setup-footer">
+              <button id="start-game" class="button primary" type="button"><span>start puzzle</span></button>
+              <p>finished puzzles are saved in this browser.</p>
             </div>
-          </fieldset>
-          <div class="setup-footer">
-            <p>Готовые пазлы сохраняются в библиотеке этого браузера.</p>
-            <button id="start-game" class="button primary" type="button"><svg class="icon"><use href="#i-play"/></svg><span>Начать сборку</span></button>
           </div>
         </div>
       </section>
@@ -105,46 +134,46 @@
     <section id="play-view" aria-labelledby="game-title" hidden>
       <div class="page-heading game-heading">
         <div>
-          <a class="back-link" href="#create"><svg class="icon"><use href="#i-chevron"/></svg>К настройкам</a>
-          <h1 id="game-title" tabindex="-1"></h1>
+          <a class="back-link" href="#setup"><svg class="icon"><use href="#i-chevron"/></svg>back to setup</a>
+          <h1 id="game-title" class="visually-hidden" tabindex="-1">puzzle board</h1>
           <p id="game-level"></p>
         </div>
         <div class="game-progress">
           <span id="game-count" aria-live="polite"></span>
-          <progress id="game-progress" aria-label="Прогресс сборки"></progress>
+          <progress id="game-progress" aria-label="puzzle progress"></progress>
         </div>
       </div>
       <div class="game-room">
-        <div class="game-toolbar" aria-label="Инструменты сборки">
+        <div class="game-toolbar" aria-label="puzzle tools">
           <div class="game-tools">
-            <button id="toggle-guide" class="button secondary tool-button" type="button" aria-pressed="false"><svg class="icon"><use href="#i-image"/></svg><span>Образец</span></button>
-            <button id="toggle-edges" class="button secondary tool-button" type="button" aria-pressed="false"><svg class="icon"><use href="#i-edges"/></svg><span>Только края</span></button>
-            <button id="shuffle" class="button secondary tool-button" type="button" title="Разложить оставшиеся детали заново"><svg class="icon"><use href="#i-shuffle"/></svg><span>Перемешать</span></button>
+            <button id="toggle-guide" class="button secondary tool-button" type="button" aria-pressed="false"><svg class="icon"><use href="#i-image"/></svg><span>reference</span></button>
+            <button id="toggle-edges" class="button secondary tool-button" type="button" aria-pressed="false"><svg class="icon"><use href="#i-edges"/></svg><span>edges only</span></button>
+            <button id="shuffle" class="button secondary tool-button" type="button" title="shuffle the remaining pieces"><svg class="icon"><use href="#i-shuffle"/></svg><span>shuffle</span></button>
           </div>
           <div class="game-tools">
-            <div class="zoom-tools" role="group" aria-label="Масштаб игрового поля">
-              <button id="zoom-out" type="button" aria-label="Отдалить" title="Отдалить"><svg class="icon"><use href="#i-minus"/></svg></button>
-              <button id="zoom-reset" type="button" aria-label="Сбросить масштаб" title="Сбросить масштаб">100%</button>
-              <button id="zoom-in" type="button" aria-label="Приблизить" title="Приблизить"><svg class="icon"><use href="#i-plus"/></svg></button>
+            <div class="zoom-tools" role="group" aria-label="puzzle board zoom">
+              <button id="zoom-out" type="button" aria-label="zoom out" title="zoom out"><svg class="icon"><use href="#i-minus"/></svg></button>
+              <button id="zoom-reset" type="button" aria-label="reset zoom" title="reset zoom">100%</button>
+              <button id="zoom-in" type="button" aria-label="zoom in" title="zoom in"><svg class="icon"><use href="#i-plus"/></svg></button>
             </div>
-            <button id="toggle-sound" class="button secondary tool-button" type="button" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg><span>Звук</span></button>
+            <button id="toggle-sound" class="button secondary tool-button" type="button" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg><span>sound</span></button>
           </div>
         </div>
         <div class="workspace">
-          <canvas id="board" tabindex="0" aria-label="Игровое поле" aria-describedby="game-help game-keys"></canvas>
+          <canvas id="board" tabindex="0" aria-label="puzzle board" aria-describedby="game-help game-keys"></canvas>
           <div id="finish-panel" class="finish-panel" hidden>
             <span class="finish-mark"><svg class="icon"><use href="#i-check"/></svg></span>
-            <h2 id="finish-title" tabindex="-1">Пазл собран!</h2>
+            <h2 id="finish-title" tabindex="-1">puzzle complete</h2>
             <p id="finish-message" aria-live="polite"></p>
             <div class="finish-actions">
-              <a class="button primary" href="#library"><svg class="icon"><use href="#i-library"/></svg>В библиотеку</a>
-              <a id="finish-download" class="button secondary" download><svg class="icon"><use href="#i-download"/></svg>Скачать</a>
-              <button id="retry-finish" class="button secondary" type="button" hidden>Повторить сохранение</button>
+              <a class="button primary" href="#library"><svg class="icon"><use href="#i-library"/></svg>view collection</a>
+              <a id="finish-download" class="button secondary" download><svg class="icon"><use href="#i-download"/></svg>download</a>
+              <button id="retry-finish" class="button secondary" type="button" hidden>try saving again</button>
             </div>
           </div>
         </div>
-        <p id="game-help" class="game-help">Перетащите деталь к рамке. Чтобы сдвинуть поле при увеличении, потяните за свободное место.</p>
-        <p id="game-keys" class="visually-hidden">Page Up и Page Down выбирают деталь. Стрелки перемещают курсор по рамке. Enter ставит деталь.</p>
+        <p id="game-help" class="game-help">drag a piece into the frame. when zoomed in, drag the empty space to move the board.</p>
+        <p id="game-keys" class="visually-hidden">use Page Up and Page Down to select a piece, the arrow keys to move around the frame, and Enter to place the piece.</p>
         <p id="game-feedback" class="visually-hidden" aria-live="polite"></p>
         <p id="game-error" class="error game-error" role="alert" hidden></p>
       </div>
@@ -152,28 +181,28 @@
 
     <section id="library-view" aria-labelledby="library-title" hidden>
       <div class="page-heading">
-        <h1 id="library-title" tabindex="-1">Библиотека</h1>
-        <p>Ваши собранные картинки</p>
+        <h1 id="library-title" tabindex="-1">my collection</h1>
+        <p>your finished puzzles.</p>
       </div>
       <div id="library-empty" class="library-empty" hidden>
         <span class="empty-mark"><svg class="icon"><use href="#i-library"/></svg></span>
-        <h2>Здесь пока пусто</h2>
-        <p>Соберите первый пазл, и готовая картинка появится здесь.</p>
-        <a class="button primary" href="#create"><svg class="icon"><use href="#i-puzzle"/></svg>Собрать пазл</a>
+        <h2>nothing here yet</h2>
+        <p>your first finished puzzle will appear here.</p>
+        <a class="button primary" href="#puzzles">find your puzzle</a>
       </div>
       <div id="gallery" class="gallery"></div>
       <p id="library-error" class="error" role="alert" hidden></p>
     </section>
   </main>
 
-  <footer class="site-footer wrap"><span class="footer-brand"><svg class="icon"><use href="#i-coffee"/></svg> PuzzleMood</span><span>Ваши фото остаются в браузере</span></footer>
+  <footer class="site-footer wrap"><a class="footer-brand" href="#create">puzzlemood.</a><span>your photos stay in this browser</span></footer>
   <dialog id="preview-dialog" aria-labelledby="preview-title">
     <div class="dialog-heading">
       <h2 id="preview-title"></h2>
-      <button id="close-preview" class="icon-button" type="button" aria-label="Закрыть"><svg class="icon"><use href="#i-close"/></svg></button>
+      <button id="close-preview" class="icon-button" type="button" aria-label="close"><svg class="icon"><use href="#i-close"/></svg></button>
     </div>
     <img id="preview-photo" alt="">
-    <a id="preview-download" class="button primary" download><svg class="icon"><use href="#i-download"/></svg>Скачать изображение</a>
+    <a id="preview-download" class="button primary" download><svg class="icon"><use href="#i-download"/></svg>download image</a>
   </dialog>
   <canvas id="drag-layer" aria-hidden="true" hidden></canvas>
 </body>

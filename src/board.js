@@ -1,6 +1,6 @@
 import { createDesk, spreadPieces } from './desk.js';
-import { createSnapSound } from './sound.js';
-import { createPuzzle, piecePath, shuffled, targetFor } from './puzzle.js';
+import { createSnapSound } from './sound.js?v=card-on-wood';
+import { createPuzzle, piecePath, shuffled, targetFor } from './puzzle.js?v=quiet-gallery';
 
 const $ = (id) => document.getElementById(id);
 const board = $('board');
@@ -27,10 +27,10 @@ function paintPiece(context, image, piece, path, x, y, scale, stroke, shadow = f
   context.translate(x, y);
   context.scale(scale, scale);
   if (shadow) {
-    context.shadowColor = '#38211e70';
+    context.shadowColor = '#272d2670';
     context.shadowBlur = 6;
     context.shadowOffsetY = 2;
-    context.fillStyle = '#f8e8c9';
+    context.fillStyle = '#f4f2e9';
     context.fill(path);
     context.shadowColor = 'transparent';
   }
@@ -135,7 +135,7 @@ export class PuzzleBoard {
   }
 
   refreshProgress() {
-    $('game-count').textContent = this.placed.size + ' из ' + this.puzzle.pieces.length;
+    $('game-count').textContent = this.placed.size + ' of ' + this.puzzle.pieces.length;
     $('game-progress').max = this.puzzle.pieces.length;
     $('game-progress').value = this.placed.size;
     $('toggle-guide').disabled = this.done;
@@ -154,7 +154,7 @@ export class PuzzleBoard {
     $('zoom-in').disabled = this.done || this.zoomIndex === zoomLevels.length - 1;
     const percent = Math.round(zoomLevels[this.zoomIndex] * 100) + '%';
     $('zoom-reset').textContent = percent;
-    $('zoom-reset').setAttribute('aria-label', 'Сбросить масштаб, сейчас ' + percent);
+    $('zoom-reset').setAttribute('aria-label', 'reset zoom, currently ' + percent);
     $('zoom-reset').disabled = this.done || this.zoomIndex === 0;
   }
 
@@ -235,10 +235,10 @@ export class PuzzleBoard {
     const w = imageWidth * scale;
     const h = imageHeight * scale;
     context.save();
-    context.shadowColor = '#472a233b';
+    context.shadowColor = '#30342b38';
     context.shadowBlur = 14;
     context.shadowOffsetY = 3;
-    context.fillStyle = '#fff1d9';
+    context.fillStyle = '#f2f1e9';
     context.fillRect(x, y, w, h);
     context.restore();
     if (this.guide) {
@@ -246,13 +246,15 @@ export class PuzzleBoard {
       context.drawImage(this.image, x, y, w, h);
       context.globalAlpha = 1;
     }
-    context.strokeStyle = '#8c5c4b9c';
+    context.strokeStyle = '#576157a0';
     context.lineWidth = 1;
     context.strokeRect(x, y, w, h);
-    context.lineWidth = .7;
-    context.strokeStyle = '#a6785d84';
+    context.save();
+    context.lineWidth = 1.4;
+    context.lineCap = 'round';
+    context.strokeStyle = '#687369a0';
     context.beginPath();
-    context.setLineDash([2, 4]);
+    context.setLineDash([0, 5]);
     for (let col = 1; col < cols; col += 1) {
       const at = x + col * cellWidth * scale;
       context.moveTo(at, y);
@@ -264,10 +266,10 @@ export class PuzzleBoard {
       context.lineTo(x + w, at);
     }
     context.stroke();
-    context.setLineDash([]);
+    context.restore();
     for (const id of this.placed) {
       const piece = this.puzzle.pieces[id];
-      paintPiece(context, this.image, piece, this.paths[id], x + piece.x * scale, y + piece.y * scale, scale, '#4f302a7d', false, .75);
+      paintPiece(context, this.image, piece, this.paths[id], x + piece.x * scale, y + piece.y * scale, scale, '#282e287d', false, .75);
     }
     const pad = this.desk.inset * scale + 9;
     for (const [id, position] of this.positions) {
@@ -276,12 +278,12 @@ export class PuzzleBoard {
       const top = y + position.y * scale;
       if (left - pad > width || left + cellWidth * scale + pad < 0 || top - pad > height || top + cellHeight * scale + pad < 0) continue;
       const selected = id === this.selected;
-      paintPiece(context, this.image, this.puzzle.pieces[id], this.paths[id], left, top, scale, selected ? '#6b4a33' : '#4f302abd', true, selected ? 2 : .9);
+      paintPiece(context, this.image, this.puzzle.pieces[id], this.paths[id], left, top, scale, selected ? '#354d49' : '#282e28bd', true, selected ? 2 : .9);
     }
     if (this.keyboardCell !== null) {
       const cell = this.puzzle.pieces[this.keyboardCell];
       context.lineWidth = 2;
-      context.strokeStyle = '#7f4037';
+      context.strokeStyle = '#34554e';
       context.strokeRect(x + cell.x * scale + 1, y + cell.y * scale + 1, cellWidth * scale - 2, cellHeight * scale - 2);
     }
   }
@@ -292,7 +294,7 @@ export class PuzzleBoard {
 
   select(id) {
     this.selected = id;
-    $('game-feedback').textContent = id === null ? '' : 'Выбрана деталь ' + (id + 1) + '.';
+    $('game-feedback').textContent = id === null ? '' : 'selected piece ' + (id + 1) + '.';
   }
 
   worldAt(clientX, clientY) {
@@ -328,7 +330,7 @@ export class PuzzleBoard {
     if (this.selected === null) return;
     const piece = this.puzzle.pieces[cell];
     if (this.place(this.selected, piece.x, piece.y)) return;
-    $('game-feedback').textContent = 'Эта деталь сюда не подходит.';
+    $('game-feedback').textContent = 'this piece does not fit here.';
   }
 
   onKey(event) {
@@ -444,7 +446,7 @@ export class PuzzleBoard {
       dragLayer.style.width = width + 'px';
       dragLayer.style.height = height + 'px';
       const context = fitCanvas(dragLayer, width, height);
-      paintPiece(context, this.image, this.puzzle.pieces[pointer.id], this.paths[pointer.id], padding, padding, scale, '#4f302ae0', true);
+      paintPiece(context, this.image, this.puzzle.pieces[pointer.id], this.paths[pointer.id], padding, padding, scale, '#282e28e0', true);
       dragLayer.hidden = false;
     }
     const left = event.clientX - pointer.offset.x * scale - padding;
