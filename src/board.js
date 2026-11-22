@@ -22,6 +22,37 @@ function fitCanvas(canvas, width, height) {
   return context;
 }
 
+function paintGridDots(context, { x, y, scale, width, height }, { cols, rows, cellWidth, cellHeight }) {
+  const scaledCellWidth = cellWidth * scale;
+  const scaledCellHeight = cellHeight * scale;
+  const stepX = scaledCellWidth / Math.max(1, Math.round(scaledCellWidth / 7));
+  const stepY = scaledCellHeight / Math.max(1, Math.round(scaledCellHeight / 7));
+  const radius = 1;
+  const firstX = x + stepX * (Math.max(0, Math.ceil((-radius - x) / stepX - .5)) + .5);
+  const firstY = y + stepY * (Math.max(0, Math.ceil((-radius - y) / stepY - .5)) + .5);
+  const lastX = Math.min(width + radius, x + cols * scaledCellWidth);
+  const lastY = Math.min(height + radius, y + rows * scaledCellHeight);
+
+  function dot(dotX, dotY) {
+    context.moveTo(dotX + radius, dotY);
+    context.arc(dotX, dotY, radius, 0, 2 * Math.PI);
+  }
+
+  context.beginPath();
+  for (let col = 1; col < cols; col += 1) {
+    const dotX = x + col * scaledCellWidth;
+    if (dotX < -radius || dotX > width + radius) continue;
+    for (let dotY = firstY; dotY < lastY; dotY += stepY) dot(dotX, dotY);
+  }
+  for (let row = 1; row < rows; row += 1) {
+    const dotY = y + row * scaledCellHeight;
+    if (dotY < -radius || dotY > height + radius) continue;
+    for (let dotX = firstX; dotX < lastX; dotX += stepX) dot(dotX, dotY);
+  }
+  context.fillStyle = '#657164b8';
+  context.fill();
+}
+
 function paintPiece(context, image, piece, path, x, y, scale, stroke, shadow = false, lineWidth = 1) {
   context.save();
   context.translate(x, y);
@@ -222,7 +253,7 @@ export class PuzzleBoard {
   render() {
     if (!this.layout || !board.clientWidth) return;
     const { x, y, width, height, scale } = this.layout;
-    const { width: imageWidth, height: imageHeight, cellWidth, cellHeight, cols, rows } = this.puzzle;
+    const { width: imageWidth, height: imageHeight, cellWidth, cellHeight } = this.puzzle;
     const context = fitCanvas(board, width, height);
     if (this.done) {
       const fit = Math.min(width * .86 / imageWidth, height * .87 / imageHeight);
@@ -249,24 +280,7 @@ export class PuzzleBoard {
     context.strokeStyle = '#576157a0';
     context.lineWidth = 1;
     context.strokeRect(x, y, w, h);
-    context.save();
-    context.lineWidth = 1.4;
-    context.lineCap = 'round';
-    context.strokeStyle = '#687369a0';
-    context.beginPath();
-    context.setLineDash([0, 5]);
-    for (let col = 1; col < cols; col += 1) {
-      const at = x + col * cellWidth * scale;
-      context.moveTo(at, y);
-      context.lineTo(at, y + h);
-    }
-    for (let row = 1; row < rows; row += 1) {
-      const at = y + row * cellHeight * scale;
-      context.moveTo(x, at);
-      context.lineTo(x + w, at);
-    }
-    context.stroke();
-    context.restore();
+    paintGridDots(context, this.layout, this.puzzle);
     for (const id of this.placed) {
       const piece = this.puzzle.pieces[id];
       paintPiece(context, this.image, piece, this.paths[id], x + piece.x * scale, y + piece.y * scale, scale, '#282e287d', false, .75);

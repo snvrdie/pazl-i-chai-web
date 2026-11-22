@@ -1,7 +1,9 @@
-import { PuzzleBoard } from './board.js?v=dotted-board';
+import { PuzzleBoard } from './board.js?v=circle-grid';
 import { loadImage, prepareImage, sample, samples } from './images.js?v=dotted-board';
 import { levels, shuffled } from './puzzle.js?v=quiet-gallery';
 import { finishGame, getActive, getCompleted, saveActive } from './storage.js';
+import { createSudokuView } from './sudoku-view.js?v=expanded';
+import { createScanwordsView } from './scanwords-view.js?v=zoom';
 
 const $ = (id) => document.getElementById(id);
 const fileLimit = 20 * 1024 * 1024;
@@ -9,6 +11,8 @@ const uploadTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'ima
 const libraryDate = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
 const galleryUrls = [];
 const ready = restore();
+const sudoku = createSudokuView();
+const scanwords = createScanwordsView();
 let source = null;
 let selectedSample = sample;
 let uploadVersion = 0;
@@ -85,6 +89,7 @@ async function chooseFile(file) {
 
 function showResume() {
   $('resume-panel').hidden = !active;
+  $('home-resume').hidden = !active;
   if (!active) return;
   $('resume-name').textContent = active.name;
   $('resume-progress').textContent = 'in progress · ' + active.placed.length + ' of ' + levels[active.level].count;
@@ -296,10 +301,11 @@ async function openGame(current, version) {
 }
 
 function showView(view) {
-  for (const key of ['create', 'play', 'library']) $(key + '-view').hidden = key !== view;
-  $('nav-create').toggleAttribute('aria-current', view !== 'library');
-  $('nav-library').toggleAttribute('aria-current', view === 'library');
-  $(view === 'library' ? 'nav-library' : 'nav-create').setAttribute('aria-current', 'page');
+  for (const key of ['home', 'sudoku', 'scanwords', 'create', 'play', 'library']) $(key + '-view').hidden = key !== view;
+  const isRussian = view === 'scanwords';
+  const footer = $('footer-progress');
+  footer.lang = isRussian ? 'ru' : 'en';
+  footer.textContent = isRussian ? 'прогресс сохраняется в этом браузере' : 'your progress stays in this browser';
   if (view !== 'library') clearGallery();
 }
 
@@ -308,6 +314,18 @@ async function route() {
   await ready;
   if (version !== routeVersion) return;
   const hash = location.hash.slice(1);
+  if (hash === 'scanwords' || hash.startsWith('scanwords/')) {
+    showView('scanwords');
+    window.scrollTo(0, 0);
+    scanwords.open(hash.slice('scanwords/'.length));
+    return;
+  }
+  if (hash === 'sudoku' || hash.startsWith('sudoku/')) {
+    showView('sudoku');
+    window.scrollTo(0, 0);
+    sudoku.open(hash.slice('sudoku/'.length));
+    return;
+  }
   if (hash === 'library') {
     showView('library');
     window.scrollTo(0, 0);
@@ -326,14 +344,20 @@ async function route() {
     }
     return;
   }
-  showView('create');
-  if (hash === 'setup') {
+  if (hash === 'games') {
+    showView('home');
+    focusSection('games', 'games-title');
+  } else if (hash === 'setup') {
+    showView('create');
     focusSection('setup', 'setup-title');
   } else if (hash === 'puzzles') {
+    showView('create');
     focusSection('puzzles', 'catalog-title');
-  } else if (hash === 'create' || hash === 'play') {
+  } else {
+    const view = hash === 'create' || hash === 'play' ? 'create' : 'home';
+    showView(view);
     window.scrollTo(0, 0);
-    $('hero-title').focus({ preventScroll: true });
+    if (hash) $(view === 'home' ? 'home-title' : 'hero-title').focus({ preventScroll: true });
   }
 }
 
@@ -392,8 +416,6 @@ function renderLevels() {
     return option;
   });
   $('level-options').append(...options);
-  const counts = Object.values(levels).map(({ count }) => count);
-  $('masthead-range').textContent = Math.min(...counts) + '–' + Math.max(...counts) + ' pieces';
 }
 
 for (const id of ['hero-upload', 'catalog-upload', 'drop-zone']) {
@@ -412,7 +434,6 @@ $('reset-photo').addEventListener('click', () => {
   clearUpload();
   $('drop-zone').focus();
 });
-$('sample-link').addEventListener('click', (event) => chooseSample(event, sample));
 
 const dropZone = $('drop-zone');
 dropZone.addEventListener('dragover', (event) => {

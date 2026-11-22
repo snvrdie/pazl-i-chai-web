@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eae9e2">
-  <meta name="description" content="a quiet place to solve jigsaw puzzles. pick an image from the gallery or turn a photo of your own into a puzzle.">
-  <title>puzzlemood — online jigsaw puzzles</title>
+  <meta name="description" content="a quiet place for jigsaws, sudoku and russian arrow crosswords.">
+  <title>puzzlemood — jigsaws, sudoku and arrow crosswords</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=dotted-board">
-  <script type="module" src="./src/app.js?v=dotted-board"></script>
+  <link rel="stylesheet" href="./style.css?v=scanword-zoom">
+  <script type="module" src="./src/app.js?v=scanword-zoom"></script>
 </head>
 <body>
   <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -29,18 +29,198 @@
   </svg>
   <header class="site-header">
     <div class="wrap header-inner">
-      <a class="brand" href="#create" aria-label="puzzlemood home">puzzlemood.</a>
-      <nav class="nav" aria-label="main navigation">
-        <a id="nav-create" href="#puzzles" aria-current="page">explore</a>
-        <a id="nav-library" href="#library">my collection<span id="library-count" class="nav-count" hidden></span></a>
-      </nav>
-      <span id="masthead-range" class="caption masthead-range"></span>
+      <a class="brand" href="#home" aria-label="puzzlemood home">puzzlemood.</a>
     </div>
   </header>
 
   <main class="wrap">
-    <section id="create-view" aria-labelledby="hero-title">
-      <div class="hero">
+    <section id="home-view" aria-labelledby="home-title">
+      <div class="hero home-hero">
+        <div class="hero-copy">
+          <p class="hero-note">puzzles &amp; pastimes</p>
+          <h1 id="home-title" tabindex="-1">a little<br><em>time to play.</em></h1>
+          <p class="hero-description">a quiet place for jigsaws, sudoku and arrow crosswords.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#games">browse games</a>
+            <a id="home-resume" class="button text-button" href="#play" hidden>resume puzzle</a>
+          </div>
+        </div>
+        <figure class="hero-print home-photo">
+          <img src="./assets/coffee-and-pages.jpg" width="736" height="981" fetchpriority="high"
+            alt="a cup of coffee beside an open notebook and books">
+        </figure>
+      </div>
+
+      <section id="games" class="game-directory" aria-labelledby="games-title">
+        <div class="section-heading">
+          <h2 id="games-title" tabindex="-1">the game room</h2>
+        </div>
+        <div class="directory-grid">
+          <a class="directory-link" href="#create">
+            <div>
+              <h3>jigsaw puzzles</h3>
+              <p class="directory-description">pick a picture or bring your own.</p>
+            </div>
+            <img class="directory-cover" src="./assets/jigsaws/loose-pieces.webp" width="828" height="828" alt="" loading="lazy">
+          </a>
+          <a class="directory-link directory-sudoku" href="#sudoku">
+            <div>
+              <h3>sudoku</h3>
+              <p class="directory-description">36 puzzles across six difficulty levels.</p>
+            </div>
+            <img class="directory-cover" src="./assets/sudoku/coffee.webp" width="736" height="552" alt="" loading="lazy">
+          </a>
+          <a class="directory-link directory-scanwords" href="#scanwords">
+            <div>
+              <h3>arrow crosswords</h3>
+              <p class="directory-description">play in russian.</p>
+            </div>
+            <img class="directory-cover" src="./assets/scanwords/pencil-and-paper.webp" width="736" height="736" alt="" loading="lazy">
+          </a>
+        </div>
+        <p class="directory-planned"><span class="caption">planned</span> chess and word searches.</p>
+      </section>
+    </section>
+
+    <section id="sudoku-view" aria-label="sudoku" hidden>
+      <div id="sudoku-lobby">
+        <div class="game-intro">
+          <div class="page-heading game-page-heading">
+            <a class="back-link" href="#games"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>all games</a>
+            <h1 id="sudoku-title" tabindex="-1">sudoku</h1>
+            <p>fill each row, column and 3 × 3 box with the numbers 1–9.</p>
+          </div>
+          <figure class="photo-collage sudoku-collage" aria-label="a collage of sudoku photos">
+            <img class="collage-print sudoku-print-meme" src="./assets/sudoku/kitten-meme.png" width="515" height="343" loading="lazy"
+              alt="a kitten lying on a sudoku board with the words “oh sudoku, only you understand me”">
+            <img class="collage-print sudoku-print-blanket" src="./assets/sudoku/blanket.webp" width="736" height="499" loading="lazy"
+              alt="a pen and an open sudoku book on a rumpled blanket">
+            <img class="collage-print sudoku-print-glasses" src="./assets/sudoku/glasses.webp" width="736" height="414" loading="lazy"
+              alt="glasses and wired earphones lying on a sudoku book">
+            <img class="collage-print sudoku-print-coffee" src="./assets/sudoku/coffee.webp" width="736" height="552" loading="lazy"
+              alt="coffee, cake and an open sudoku book on a sunlit table">
+            <img class="collage-print sudoku-print-notebook" src="./assets/sudoku/notebook.webp" width="735" height="510" loading="lazy"
+              alt="a person holding an open sudoku notebook">
+            <img class="collage-print sudoku-print-paperback" src="./assets/sudoku/paperback.webp" width="736" height="981" loading="lazy"
+              alt="a paperback sudoku collection and earphones held against a grey sweatshirt">
+          </figure>
+        </div>
+        <div class="sudoku-directory">
+          <section class="sudoku-order" aria-labelledby="sudoku-order-title">
+            <h2 id="sudoku-order-title">play in order</h2>
+            <p>start with the basics and work through each level.</p>
+            <p id="sudoku-progress" class="caption"></p>
+            <a id="sudoku-order-link" class="button primary" href="#sudoku/beginner-1">start with puzzle 1</a>
+          </section>
+          <section class="sudoku-levels" aria-labelledby="sudoku-levels-title">
+            <h2 id="sudoku-levels-title">choose a difficulty</h2>
+            <div id="sudoku-level-list"></div>
+          </section>
+        </div>
+      </div>
+
+      <div id="sudoku-game" hidden>
+        <div class="page-heading game-page-heading">
+          <a class="back-link" href="#sudoku"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>back to sudoku</a>
+          <h1 id="sudoku-game-title" tabindex="-1">sudoku</h1>
+          <p id="sudoku-game-meta" class="caption"></p>
+        </div>
+        <div class="sudoku-play">
+          <div id="sudoku-board" class="sudoku-board" role="grid" aria-label="sudoku board" aria-describedby="sudoku-keys"></div>
+          <div class="sudoku-controls">
+            <div id="sudoku-keypad" class="sudoku-keypad" role="group" aria-label="enter a number"></div>
+            <div class="sudoku-tools" role="group" aria-label="sudoku tools">
+              <button id="sudoku-notes" class="button secondary" type="button" aria-pressed="false">notes</button>
+              <button id="sudoku-erase" class="button secondary" type="button">erase</button>
+              <button id="sudoku-check" class="button secondary" type="button">check</button>
+            </div>
+            <p id="sudoku-feedback" class="game-message" role="status"></p>
+            <a id="sudoku-next" class="button primary" href="#sudoku" hidden>next puzzle</a>
+            <p id="sudoku-keys" class="game-keys-hint">use the keypad or type a number. arrow keys move between cells.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="scanwords-view" aria-label="сканворды" lang="ru" hidden>
+      <div id="scanwords-lobby">
+        <div class="game-intro">
+          <div class="page-heading game-page-heading">
+            <a class="back-link" href="#games"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>все игры</a>
+            <h1 id="scanwords-title" tabindex="-1">сканворды</h1>
+            <p>вопросы в клетках, ответы по стрелкам.</p>
+          </div>
+          <figure class="photo-collage scanword-collage" aria-label="коллаж с кроссвордами и сканвордами">
+            <img class="collage-print scanword-print-cover" src="./assets/scanwords/pencil-and-paper.webp" width="736" height="736" loading="lazy"
+              alt="руки с карандашом и разложенной на коленях газетой">
+            <img class="collage-print scanword-print-pillow" src="./assets/scanwords/by-the-pillow.webp" width="736" height="981" loading="lazy"
+              alt="книга кроссвордов на постели с белыми подушками">
+            <img class="collage-print scanword-print-table" src="./assets/scanwords/on-the-table.webp" width="736" height="981" loading="lazy"
+              alt="газетный кроссворд рядом с деталями пазла">
+            <img class="collage-print scanword-print-news" src="./assets/scanwords/folded-newspaper.webp" width="736" height="981" loading="lazy"
+              alt="газетная страница с несколькими головоломками">
+            <img class="collage-print scanword-print-lamp" src="./assets/scanwords/lamplight.webp" width="960" height="960" loading="lazy"
+              alt="кроссворд и карандаш при свете лампы">
+            <img class="collage-print scanword-print-coffee" src="./assets/scanwords/over-coffee.webp" width="736" height="981" loading="lazy"
+              alt="сканворд, чашка кофе и свеча на светлом столе">
+            <img class="collage-print scanword-print-laptop" src="./assets/scanwords/by-the-laptop.webp" width="960" height="720" loading="lazy"
+              alt="книга головоломок, ноутбук и наушники">
+          </figure>
+        </div>
+        <section id="scanwords-editions" class="scanwords-editions" aria-labelledby="scanwords-editions-title">
+          <div class="section-heading">
+            <h2 id="scanwords-editions-title">выбрать сканворд</h2>
+            <p id="scanwords-total" class="caption"></p>
+          </div>
+          <div id="scanwords-options" class="scanwords-options"></div>
+          <a id="scanwords-start" class="button primary" href="#scanwords/1" hidden>начать сканворд 1</a>
+        </section>
+      </div>
+
+      <div id="scanwords-game" hidden>
+        <div class="page-heading game-page-heading">
+          <a class="back-link" href="#scanwords"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>все сканворды</a>
+          <h1 id="scanwords-game-title" tabindex="-1">сканворд</h1>
+          <p id="scanwords-solved" class="caption"></p>
+        </div>
+        <div class="scanwords-workspace">
+          <section class="scanwords-active-clue" aria-label="выбранный вопрос">
+            <p id="scanwords-clue-number" class="caption"></p>
+            <p id="scanwords-clue-question" aria-live="polite"></p>
+            <div class="scanwords-actions" role="group" aria-label="переход между вопросами">
+              <button id="scanwords-prev-clue" class="button secondary" type="button">предыдущий</button>
+              <button id="scanwords-next-clue" class="button secondary" type="button">следующий</button>
+            </div>
+          </section>
+          <div class="scanwords-sheet">
+            <div class="scanwords-scale">
+              <span class="caption">масштаб</span>
+              <div class="zoom-tools" role="group" aria-label="масштаб сетки">
+                <button id="scanwords-zoom-out" type="button" aria-label="уменьшить масштаб" title="уменьшить масштаб"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg></button>
+                <button id="scanwords-zoom-reset" class="zoom-reset" type="button" aria-label="сбросить масштаб" title="сбросить масштаб">100%</button>
+                <button id="scanwords-zoom-in" type="button" aria-label="увеличить масштаб" title="увеличить масштаб"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+              </div>
+            </div>
+            <div id="scanwords-scroll" class="scanwords-scroll" role="region" tabindex="0" aria-label="прокручиваемое поле сканворда">
+              <div id="scanwords-grid" class="scanwords-grid" role="grid" aria-label="сетка сканворда" aria-describedby="scanwords-help"></div>
+            </div>
+          </div>
+          <div class="scanwords-controls">
+            <div id="scanwords-keyboard" class="scanwords-keyboard" role="group" aria-label="русская клавиатура"></div>
+            <div class="scanwords-actions" role="group" aria-label="действия с ответами">
+              <button id="scanwords-erase" class="button secondary" type="button">стереть</button>
+              <button id="scanwords-answers" class="button secondary" type="button" aria-pressed="false">ответы</button>
+            </div>
+            <p id="scanwords-feedback" class="game-message" role="status"></p>
+            <a id="scanwords-next" class="button primary" href="#scanwords" hidden>следующий сканворд</a>
+            <p id="scanwords-help" class="game-keys-hint">нажмите на клетку со стрелкой, чтобы прочитать вопрос. повторное нажатие на клетку на пересечении меняет направление.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="create-view" aria-labelledby="hero-title" hidden>
+      <div class="hero jigsaw-hero">
         <div class="hero-copy">
           <p class="hero-note">online jigsaw puzzles</p>
           <h1 id="hero-title" tabindex="-1">piece by<br><em>piece.</em></h1>
@@ -48,14 +228,22 @@
           <div class="hero-actions">
             <a class="button primary" href="#puzzles">find your puzzle</a>
             <button id="hero-upload" class="button text-button" type="button"><svg class="icon"><use href="#i-upload"/></svg>upload a photo</button>
+            <a class="button text-button" href="#library">my collection<span id="library-count" class="collection-count" hidden></span></a>
           </div>
         </div>
-        <figure class="hero-figure">
-          <a id="sample-link" class="hero-print" href="#setup" aria-label="set up the featured puzzle">
-            <img src="./assets/quiet-afternoon.jpg" width="736" height="965" fetchpriority="high"
-              alt="an overhead view of a person and a ginger cat on a patterned rug">
-          </a>
-          <figcaption class="caption">featured puzzle</figcaption>
+        <figure class="photo-collage jigsaw-collage" aria-label="a collage of jigsaw puzzle photos">
+          <img class="collage-print jigsaw-print-floor" src="./assets/jigsaws/on-the-floor.webp" width="735" height="490" loading="lazy"
+            alt="a person assembling a jigsaw on the floor in warm light">
+          <img class="collage-print jigsaw-print-table" src="./assets/jigsaws/table-and-coffee.webp" width="736" height="552" loading="lazy"
+            alt="a bright jigsaw, a coffee cup and a plate on a dark table">
+          <img class="collage-print jigsaw-print-winter" src="./assets/jigsaws/winter-puzzle.webp" width="735" height="800" loading="lazy"
+            alt="a winter jigsaw and its box on a wooden table">
+          <img class="collage-print jigsaw-print-candle" src="./assets/jigsaws/candlelight.webp" width="750" height="915" loading="lazy"
+            alt="a person assembling a jigsaw beside a candle and a cup">
+          <img class="collage-print jigsaw-print-progress" src="./assets/jigsaws/puzzle-in-progress.webp" width="640" height="480" loading="lazy"
+            alt="a partly assembled jigsaw on a white desk">
+          <img class="collage-print jigsaw-print-pieces" src="./assets/jigsaws/loose-pieces.webp" width="828" height="828" loading="lazy"
+            alt="a close-up of loose jigsaw pieces">
         </figure>
       </div>
 
@@ -153,7 +341,7 @@
           <div class="game-tools">
             <div class="zoom-tools" role="group" aria-label="puzzle board zoom">
               <button id="zoom-out" type="button" aria-label="zoom out" title="zoom out"><svg class="icon"><use href="#i-minus"/></svg></button>
-              <button id="zoom-reset" type="button" aria-label="reset zoom" title="reset zoom">100%</button>
+              <button id="zoom-reset" class="zoom-reset" type="button" aria-label="reset zoom" title="reset zoom">100%</button>
               <button id="zoom-in" type="button" aria-label="zoom in" title="zoom in"><svg class="icon"><use href="#i-plus"/></svg></button>
             </div>
             <button id="toggle-sound" class="button secondary tool-button" type="button" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg><span>sound</span></button>
@@ -195,7 +383,7 @@
     </section>
   </main>
 
-  <footer class="site-footer wrap"><a class="footer-brand" href="#create">puzzlemood.</a><span>your photos stay in this browser</span></footer>
+  <footer class="site-footer wrap"><a class="footer-brand" href="#home">puzzlemood.</a><span id="footer-progress">your progress stays in this browser</span></footer>
   <dialog id="preview-dialog" aria-labelledby="preview-title">
     <div class="dialog-heading">
       <h2 id="preview-title"></h2>
