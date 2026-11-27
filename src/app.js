@@ -1,18 +1,39 @@
-import { PuzzleBoard } from './board.js?v=circle-grid';
+import { PuzzleBoard } from './board.js?v=tray-return';
+import { collectionPicture } from './collection-picture.js';
+import { progressLabel } from './jigsaw-progress.js?v=tray-return';
 import { loadImage, prepareImage, sample, samples } from './images.js?v=dotted-board';
 import { levels, shuffled } from './puzzle.js?v=quiet-gallery';
-import { finishGame, getActive, getCompleted, saveActive } from './storage.js';
-import { createSudokuView } from './sudoku-view.js?v=expanded';
-import { createScanwordsView } from './scanwords-view.js?v=zoom';
+import { countCompleted, deleteCompleted, finishGame, getActive, getCompleted, getCompletedImages, saveActive } from './storage.js?v=collection-delete';
+import { createSudokuView } from './sudoku-view.js?v=shared-rooms';
+import { createScanwordsView } from './scanwords-view.js?v=puzzle-layout';
+import { createWordsearchView } from './wordsearch-view.js?v=shared-rooms';
+import { connectRoom, createRoom, loadRoom, roomsAvailable } from './rooms.js?v=puzzle-layout';
+import { jigsawSample } from './room-game.js?v=puzzle-layout';
 
 const $ = (id) => document.getElementById(id);
 const fileLimit = 20 * 1024 * 1024;
 const uploadTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'];
 const libraryDate = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
 const galleryUrls = [];
-const ready = restore();
 const sudoku = createSudokuView();
 const scanwords = createScanwordsView();
+const wordsearch = createWordsearchView();
+const sharedViews = { sudoku, scanwords, wordsearch };
+const inviteButtons = [...document.querySelectorAll('[data-room-create]')];
+const roomCopy = {
+  en: {
+    invite: 'play together', creating: 'creating room…', unavailable: 'could not create a room. try again.',
+    copy: 'copy invite link', copied: 'link copied', link: 'invite link',
+    connected: 'playing together', connecting: 'connecting to the room…',
+    saving: 'saving moves…', failed: 'a move could not be saved.',
+  },
+  ru: {
+    invite: 'играть вместе', creating: 'создаём комнату…', unavailable: 'не удалось создать комнату. попробуйте ещё раз.',
+    copy: 'скопировать ссылку', copied: 'ссылка скопирована', link: 'ссылка для приглашения',
+    connected: 'совместная игра', connecting: 'подключаемся к комнате…',
+    saving: 'сохраняем ходы…', failed: 'не удалось сохранить ход.',
+  },
+};
 let source = null;
 let selectedSample = sample;
 let uploadVersion = 0;
@@ -24,8 +45,13 @@ let puzzleBoard;
 let routeVersion = 0;
 let sourceUrl;
 let finishUrl;
-let previewUrl;
+let previewRequest;
+let deleteId;
 let saveQueue = Promise.resolve();
+let onlineRooms = false;
+let roomCreating = false;
+let openRoom;
+let roomLanguage = 'en';
 
 function report(id, message = '') {
   const box = $(id);
@@ -48,8 +74,6 @@ function setSource(data) {
   source = data;
   sourceUrl = data ? URL.createObjectURL(data.thumbnail) : undefined;
   $('source-photo').src = sourceUrl ?? selectedSample.url;
-  $('source-name').textContent = data?.name ?? selectedSample.name;
-  $('source-name').title = $('source-name').textContent.toLowerCase();
   $('reset-photo').hidden = !data;
   $('drop-title').textContent = data ? 'replace photo' : 'add your own photo';
 }
@@ -58,6 +82,7 @@ function refreshStart() {
   $('start-game').disabled = processing || starting;
   $('start-game').querySelector('span').textContent = starting ? 'preparing your puzzle…' : 'start puzzle';
   $('drop-help').textContent = processing ? 'loading your image…' : 'drag it here or choose a file';
+  refreshInvites();
 }
 
 async function chooseFile(file) {
@@ -91,18 +116,19 @@ function showResume() {
   $('resume-panel').hidden = !active;
   $('home-resume').hidden = !active;
   if (!active) return;
-  $('resume-name').textContent = active.name;
-  $('resume-progress').textContent = 'in progress · ' + active.placed.length + ' of ' + levels[active.level].count;
+  $('resume-progress').textContent = 'in progress · ' + progressLabel(active, levels[active.level].count);
 }
 
-async function restore() {
+function reportStorageError() {
+  report('upload-error', 'browser storage is unavailable. your images and progress may not be saved.');
+}
+
+async function restoreActive() {
   try {
-    const [current, completed] = await Promise.all([getActive(), getCompleted()]);
-    active = current;
+    active = await getActive();
     showResume();
-    showLibraryCount(completed.length);
   } catch {
-    report('upload-error', 'browser storage is unavailable. your images and progress may not be saved.');
+    reportStorageError();
   }
 }
 
@@ -110,7 +136,7 @@ async function startGame() {
   if (processing || starting) return;
   starting = true;
   refreshStart();
-  await ready;
+  await activeReady;
   if (active?.placed.length || active?.loose.length) {
     if (!window.confirm('start a new puzzle? this will replace your unfinished puzzle.')) {
       starting = false;
@@ -131,7 +157,7 @@ async function startGame() {
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
     const id = crypto.randomUUID?.() ?? [Date.now(), seed].join('-');
     const order = shuffled(Array.from({ length: levels[level].count }, (_, index) => index));
-    const next = { ...data, id, level, seed, order, placed: [], loose: [] };
+    const next = { ...data, id, level, seed, order, placed: [], loose: [], groups: [] };
     await saveQueue;
     try {
       await saveActive(next, true);
@@ -166,50 +192,150 @@ function downloadFor(anchor, entry, url) {
   anchor.download = entry.filename;
 }
 
-function openPreview(entry) {
-  if (previewUrl) URL.revokeObjectURL(previewUrl);
-  previewUrl = URL.createObjectURL(entry.original);
-  $('preview-title').textContent = entry.name;
-  $('preview-photo').src = previewUrl;
-  $('preview-photo').alt = entry.name;
-  downloadFor($('preview-download'), entry, previewUrl);
+async function openPreview(entry, getImages, getDownload) {
+  const request = Symbol();
+  previewRequest = request;
+  const photo = $('preview-photo');
+  const download = $('preview-download');
+  photo.hidden = true;
+  photo.removeAttribute('src');
+  download.hidden = true;
+  report('preview-status', 'preparing picture…');
   $('preview-dialog').showModal();
+
+  const [picture, originalUrl] = await Promise.all([
+    collectionPicture(entry, getImages, 1400, true).catch(() => undefined),
+    getDownload(),
+  ]);
+  if (previewRequest !== request) return;
+  report('preview-status');
+  if (originalUrl) {
+    downloadFor(download, entry, originalUrl);
+    download.hidden = false;
+  }
+  if (picture) {
+    photo.src = picture;
+    photo.alt = entry.name + ', assembled puzzle';
+    photo.hidden = false;
+    return;
+  }
+  report('preview-status', 'the saved photo could not be opened.');
 }
 
-function galleryCard(entry) {
+function confirmPuzzleDeletion(entry) {
+  if ($('confirm-puzzle-delete').disabled) return;
+  deleteId = entry.id;
+  $('delete-puzzle-help').textContent = '“' + entry.name + '” will be permanently removed from your collection.';
+  report('delete-puzzle-error');
+  $('delete-puzzle-dialog').showModal();
+}
+
+async function removePuzzle(event) {
+  event.preventDefault();
+  const id = deleteId;
+  const button = $('confirm-puzzle-delete');
+  const cancel = $('cancel-puzzle-delete');
+  if (id === undefined || button.disabled) return;
+  button.disabled = true;
+  cancel.disabled = true;
+  report('delete-puzzle-error');
+  const version = routeVersion;
+  const deletion = saveQueue.then(() => deleteCompleted(id));
+  saveQueue = deletion.catch(() => {});
+  try {
+    await deletion;
+    if (game?.id === id) {
+      game = undefined;
+      if (puzzleBoard?.game.id === id) {
+        puzzleBoard.destroy();
+        puzzleBoard = undefined;
+      }
+      if (finishUrl) URL.revokeObjectURL(finishUrl);
+      finishUrl = undefined;
+    }
+    $('delete-puzzle-dialog').close();
+    if (version === routeVersion) {
+      await renderLibrary(version);
+      if (version === routeVersion) $('library-title').focus({ preventScroll: true });
+    } else {
+      showLibraryCount(await countCompleted());
+    }
+  } catch {
+    if (version === routeVersion) report('delete-puzzle-error', 'the puzzle could not be deleted. try again.');
+  } finally {
+    button.disabled = false;
+    cancel.disabled = false;
+  }
+}
+
+function galleryCard(entry, index) {
   const card = document.createElement('article');
   card.className = 'gallery-card';
   const figure = document.createElement('button');
   figure.type = 'button';
   figure.className = 'gallery-photo';
-  figure.setAttribute('aria-label', 'preview ' + entry.name);
-  figure.addEventListener('click', () => openPreview(entry));
+  const number = index + 1;
+  figure.setAttribute('aria-label', 'preview completed puzzle ' + number);
   const image = document.createElement('img');
-  const thumbnailUrl = URL.createObjectURL(entry.thumbnail);
-  galleryUrls.push(thumbnailUrl);
-  image.src = thumbnailUrl;
   image.alt = '';
-  image.loading = 'lazy';
-  figure.append(image);
+  image.hidden = true;
+  const placeholder = document.createElement('span');
+  placeholder.className = 'gallery-placeholder';
+  placeholder.textContent = 'preparing picture…';
+  figure.append(image, placeholder);
 
   const details = document.createElement('div');
   details.className = 'gallery-details';
-  const heading = document.createElement('div');
-  const name = document.createElement('h2');
-  name.textContent = entry.name;
   const caption = document.createElement('p');
   caption.textContent = levels[entry.level].label + ' · ' + libraryDate.format(entry.completedAt);
-  heading.append(name, caption);
   const download = document.createElement('a');
   download.className = 'icon-button';
   download.title = 'download image';
-  download.setAttribute('aria-label', 'download ' + entry.name);
-  const originalUrl = URL.createObjectURL(entry.original);
-  galleryUrls.push(originalUrl);
-  downloadFor(download, entry, originalUrl);
+  download.setAttribute('aria-label', 'download original photo for completed puzzle ' + number);
+  download.hidden = true;
   download.append(icon('download'));
-  details.append(heading, download);
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'icon-button';
+  remove.title = 'delete puzzle';
+  remove.setAttribute('aria-label', 'delete completed puzzle ' + number);
+  remove.setAttribute('aria-haspopup', 'dialog');
+  remove.append(icon('trash'));
+  remove.addEventListener('click', () => confirmPuzzleDeletion(entry));
+  const actions = document.createElement('div');
+  actions.className = 'gallery-actions';
+  actions.append(download, remove);
+  details.append(caption, actions);
   card.append(figure, details);
+
+  let images;
+  let downloadReady;
+  const getImages = () => images ??= getCompletedImages(entry).catch(() => ({})).finally(() => { images = undefined; });
+  const getDownload = () => downloadReady ??= getImages().then(async ({ original }) => {
+    if (!original?.size) return;
+    const source = entry.original ? new Blob([await original.arrayBuffer()], { type: original.type }) : original;
+    if (!card.isConnected || !source.size) return;
+    const url = URL.createObjectURL(source);
+    galleryUrls.push(url);
+    return url;
+  }).catch(() => undefined);
+
+  figure.addEventListener('click', () => openPreview(entry, getImages, getDownload));
+  void getDownload().then((url) => {
+    if (!url || !card.isConnected) return;
+    downloadFor(download, entry, url);
+    download.hidden = false;
+  });
+  void collectionPicture(entry, getImages, 660).catch(() => undefined).then((picture) => {
+    if (!card.isConnected) return;
+    if (picture) {
+      image.src = picture;
+      image.hidden = false;
+      placeholder.hidden = true;
+    } else {
+      placeholder.textContent = 'photo unavailable';
+    }
+  });
   return card;
 }
 
@@ -217,6 +343,7 @@ async function renderLibrary(version) {
   clearGallery();
   report('library-error');
   $('library-empty').hidden = true;
+  $('library-loading').hidden = false;
   try {
     await saveQueue;
     const entries = await getCompleted();
@@ -227,6 +354,8 @@ async function renderLibrary(version) {
     $('gallery').append(...entries.map(galleryCard));
   } catch {
     if (version === routeVersion) report('library-error', 'the collection could not be opened. check that browser storage is available.');
+  } finally {
+    if (version === routeVersion) $('library-loading').hidden = true;
   }
 }
 
@@ -252,7 +381,7 @@ function persistCompletion(current) {
         showResume();
         showFinish('saved', 'saved to your collection.');
       }
-      showLibraryCount((await getCompleted()).length);
+      showLibraryCount(await countCompleted());
     } catch {
       if (game?.id === current.id && !game.saved) {
         showFinish('error', 'this puzzle could not be saved. you can still download the image.');
@@ -263,6 +392,10 @@ function persistCompletion(current) {
 
 function onBoardChange(progress, done) {
   game = { ...game, ...progress, completedAt: done ? Date.now() : undefined };
+  if (done) {
+    game.puzzleWidth = puzzleBoard.puzzle.width;
+    game.puzzleHeight = puzzleBoard.puzzle.height;
+  }
   if (active?.id === game.id) active = game;
   showResume();
   const current = game;
@@ -281,7 +414,7 @@ function onBoardChange(progress, done) {
   });
 }
 
-async function openGame(current, version) {
+async function openGame(current, version, shared) {
   if (puzzleBoard?.game.id === current.id) return;
   const image = await loadImage(current.playable);
   if (version !== routeVersion) return;
@@ -290,30 +423,159 @@ async function openGame(current, version) {
   const level = levels[current.level];
   $('game-level').textContent = level.label + ' · ' + level.count + ' pieces';
   $('game-feedback').textContent = '';
-  game = current;
-  puzzleBoard = new PuzzleBoard(current, image, onBoardChange);
+  if (!shared) game = current;
+  const onChange = shared ? (_progress, _done, action) => shared.send(action) : onBoardChange;
+  puzzleBoard = new PuzzleBoard(current, image, onChange);
   puzzleBoard.resize();
-  if (current.completedAt) {
+  if (shared) {
+    report('game-error');
+    showSharedFinish(shared);
+  } else if (current.completedAt) {
     if (current.saved) showFinish('saved', 'saved to your collection.');
     else persistCompletion(current);
   }
   $('game-title').focus({ preventScroll: true });
 }
 
-function showView(view) {
-  for (const key of ['home', 'sudoku', 'scanwords', 'create', 'play', 'library']) $(key + '-view').hidden = key !== view;
-  const isRussian = view === 'scanwords';
+function showView(view, language = view === 'scanwords' ? 'ru' : 'en', shared = false) {
+  if (view !== 'scanwords') scanwords.closeCode();
+  for (const key of ['home', 'sudoku', 'scanwords', 'wordsearch', 'create', 'play', 'library', 'room']) $(key + '-view').hidden = key !== view;
   const footer = $('footer-progress');
-  footer.lang = isRussian ? 'ru' : 'en';
-  footer.textContent = isRussian ? 'прогресс сохраняется в этом браузере' : 'your progress stays in this browser';
-  if (view !== 'library') clearGallery();
+  footer.lang = language;
+  if (shared) footer.textContent = language === 'ru' ? 'прогресс сохраняется в комнате' : 'progress is saved in this room';
+  else footer.textContent = language === 'ru' ? 'прогресс сохраняется в этом браузере' : 'your progress stays in this browser';
+  if (view !== 'library') {
+    if ($('preview-dialog').open) $('preview-dialog').close();
+    if ($('delete-puzzle-dialog').open) $('delete-puzzle-dialog').close();
+    clearGallery();
+  }
+}
+
+function refreshInvites() {
+  for (const button of inviteButtons) {
+    const jigsaw = button.dataset.roomCreate === 'jigsaw';
+    button.hidden = !onlineRooms || Boolean(openRoom);
+    button.disabled = roomCreating || (jigsaw && (processing || starting || Boolean(source)));
+  }
+  $('room-photo-help').hidden = !onlineRooms || !source;
+  inviteButtons.find((button) => button.dataset.roomCreate === 'wordsearch').textContent =
+    roomCopy[$('wordsearch-view').lang === 'ru' ? 'ru' : 'en'].invite;
+}
+
+async function invite(button) {
+  if (roomCreating) return;
+  const type = button.dataset.roomCreate;
+  const isJigsaw = type === 'jigsaw';
+  const id = isJigsaw ? selectedSample.filename : location.hash.split('/')[1];
+  const language = type === 'scanwords' || (type === 'wordsearch' && id?.startsWith('ru-')) ? 'ru' : 'en';
+  const copy = roomCopy[language];
+  const config = isJigsaw ? { type, id, level: document.querySelector('input[name="level"]:checked').value } : { type, id };
+  const feedback = button.parentNode.querySelector('[role="status"]');
+  const version = routeVersion;
+  roomCreating = true;
+  refreshInvites();
+  button.textContent = copy.creating;
+  feedback.hidden = true;
+  try {
+    const room = await createRoom(config);
+    if (version === routeVersion) location.hash = 'room/' + room.id;
+  } catch {
+    if (version === routeVersion) {
+      feedback.textContent = copy.unavailable;
+      feedback.hidden = false;
+    }
+  } finally {
+    roomCreating = false;
+    button.textContent = copy.invite;
+    refreshInvites();
+  }
+}
+
+function showSharedFinish(room) {
+  $('finish-panel').hidden = !puzzleBoard.done;
+  if (!puzzleBoard.done) return;
+  $('finish-message').textContent = 'you finished the puzzle together.';
+  $('retry-finish').hidden = true;
+  $('finish-panel').querySelector('a[href="#library"]').hidden = true;
+  downloadFor($('finish-download'), room.sample, room.sample.url);
+}
+
+function closeSharedGame() {
+  if (!openRoom) return;
+  openRoom.session?.close();
+  if (openRoom.sample) {
+    puzzleBoard?.destroy();
+    puzzleBoard = undefined;
+  }
+  openRoom = undefined;
+  $('room-controls').hidden = true;
+  refreshInvites();
+}
+
+async function openSharedGame(id, version) {
+  showView('room');
+  window.scrollTo(0, 0);
+  $('room-title').focus({ preventScroll: true });
+  $('room-error').textContent = 'opening the room…';
+  $('retry-room').hidden = true;
+  try {
+    if (!/^[a-f0-9]{32}$/.test(id)) throw Object.assign(new Error(), { status: 404 });
+    const initial = await loadRoom(id);
+    if (version !== routeVersion) return;
+    const { type, id: puzzleId } = initial.game;
+    const language = type === 'scanwords' || (type === 'wordsearch' && puzzleId.startsWith('ru-')) ? 'ru' : 'en';
+    const room = { state: initial.state, send: (action) => room.session?.send(action) };
+    openRoom = room;
+    if (type === 'jigsaw') {
+      room.sample = jigsawSample(initial.game);
+      showView('play', language, true);
+      const { seed, level } = initial.game;
+      await openGame({ ...initial.state, id, seed, level, playable: room.sample.url }, version, room);
+      if (version !== routeVersion) return;
+    } else {
+      showView(type, language, true);
+      if (type === 'wordsearch') wordsearch.open(puzzleId, language, room);
+      else sharedViews[type].open(puzzleId, room);
+    }
+
+    roomLanguage = language;
+    $('copy-room-link').textContent = roomCopy[language].copy;
+    $('room-link').hidden = true;
+    $('room-link').value = location.href;
+    $('room-link').setAttribute('aria-label', roomCopy[language].link);
+    $(type + '-room-actions').append($('room-controls'));
+    $('room-controls').hidden = false;
+    refreshInvites();
+    room.session = connectRoom(initial, (state) => {
+      room.state = state;
+      if (room.sample) {
+        puzzleBoard.setProgress(state);
+        showSharedFinish(room);
+      } else sharedViews[type].updateRoom(state);
+    }, (status) => {
+      const message = roomCopy[language][status];
+      if ($('room-connection').textContent !== message) $('room-connection').textContent = message;
+    });
+  } catch (error) {
+    if (version !== routeVersion) return;
+    closeSharedGame();
+    showView('room');
+    const missing = error.status === 404;
+    $('room-error').textContent = missing ? 'this room could not be found. check the invite link.' : 'could not open the room. try again.';
+    $('retry-room').hidden = missing;
+    $('room-title').focus({ preventScroll: true });
+  }
 }
 
 async function route() {
   const version = ++routeVersion;
-  await ready;
-  if (version !== routeVersion) return;
   const hash = location.hash.slice(1);
+  closeSharedGame();
+  for (const button of inviteButtons) button.parentNode.querySelector('[role="status"]').hidden = true;
+  if (hash === 'room' || hash.startsWith('room/')) {
+    await openSharedGame(hash.slice('room/'.length), version);
+    return;
+  }
   if (hash === 'scanwords' || hash.startsWith('scanwords/')) {
     showView('scanwords');
     window.scrollTo(0, 0);
@@ -326,12 +588,25 @@ async function route() {
     sudoku.open(hash.slice('sudoku/'.length));
     return;
   }
+  if (hash === 'wordsearch' || hash.startsWith('wordsearch/')) {
+    const path = hash.slice('wordsearch/'.length);
+    const language = path === 'ru' || path.startsWith('ru-') ? 'ru' : 'en';
+    showView('wordsearch', language);
+    window.scrollTo(0, 0);
+    wordsearch.open(path, language);
+    refreshInvites();
+    return;
+  }
   if (hash === 'library') {
     showView('library');
     window.scrollTo(0, 0);
     $('library-title').focus({ preventScroll: true });
     await renderLibrary(version);
     return;
+  }
+  if (hash === 'play' && !game && !active) {
+    await activeReady;
+    if (version !== routeVersion) return;
   }
   if (hash === 'play' && (game || active)) {
     showView('play');
@@ -389,14 +664,14 @@ function chooseSample(event, entry) {
 
 function renderCatalog() {
   const template = $('catalog-card');
-  const cards = samples.map((entry) => {
+  const cards = samples.map((entry, index) => {
     const card = template.content.firstElementChild.cloneNode(true);
     const image = card.querySelector('img');
     image.width = entry.width;
     image.height = entry.height;
     image.src = entry.url;
     const link = card.querySelector('a');
-    link.setAttribute('aria-label', 'set up ' + entry.name);
+    link.setAttribute('aria-label', 'set up gallery puzzle ' + (index + 1));
     link.addEventListener('click', (event) => chooseSample(event, entry));
     return card;
   });
@@ -451,14 +726,37 @@ dropZone.addEventListener('drop', (event) => {
   chooseFile(event.dataTransfer.files[0]);
 });
 $('start-game').addEventListener('click', startGame);
+for (const button of inviteButtons) button.addEventListener('click', () => invite(button));
+$('retry-room').addEventListener('click', route);
+$('copy-room-link').addEventListener('click', async () => {
+  const link = $('room-link');
+  try {
+    await navigator.clipboard.writeText(link.value);
+    $('copy-room-link').textContent = roomCopy[roomLanguage].copied;
+  } catch {
+    link.hidden = false;
+    link.select();
+  }
+});
 $('retry-finish').addEventListener('click', () => persistCompletion(game));
 $('close-preview').addEventListener('click', () => $('preview-dialog').close());
 $('preview-dialog').addEventListener('close', () => {
-  if (previewUrl) URL.revokeObjectURL(previewUrl);
-  previewUrl = undefined;
+  if ($('preview-dialog').open) return;
+  previewRequest = undefined;
   $('preview-photo').removeAttribute('src');
+});
+$('delete-puzzle-form').addEventListener('submit', removePuzzle);
+$('cancel-puzzle-delete').addEventListener('click', () => $('delete-puzzle-dialog').close());
+$('delete-puzzle-dialog').addEventListener('cancel', (event) => {
+  if ($('confirm-puzzle-delete').disabled) event.preventDefault();
 });
 renderCatalog();
 renderLevels();
+const activeReady = restoreActive();
+countCompleted().then(showLibraryCount, reportStorageError);
 window.addEventListener('hashchange', route);
+roomsAvailable().then((available) => {
+  onlineRooms = available;
+  refreshInvites();
+});
 route();

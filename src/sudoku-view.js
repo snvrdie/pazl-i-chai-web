@@ -1,4 +1,5 @@
-import { findSudokuConflicts, solveSudoku, sudokuRows } from './sudoku.js';
+import { renderPuzzleMark } from './puzzle-ink.js';
+import { solveSudoku, sudokuRows } from './sudoku.js';
 import { sudokuLevels } from './sudoku-puzzles.js?v=expanded';
 
 const $ = (id) => document.getElementById(id);
@@ -37,6 +38,8 @@ export function createSudokuView() {
   const noteButton = $('sudoku-notes');
   const eraseButton = $('sudoku-erase');
   const checkButton = $('sudoku-check');
+  const solutionButton = $('sudoku-solution');
+  const feedback = $('sudoku-feedback');
   let current;
   let solution;
   let values;
@@ -44,7 +47,9 @@ export function createSudokuView() {
   let selected = 0;
   let takingNotes = false;
   let complete = false;
-  let checked = new Set();
+  let checked = false;
+  let showingSolution = false;
+  let shared;
 
   function renderLobby() {
     Object.assign(progress, readProgress());
@@ -82,15 +87,17 @@ export function createSudokuView() {
   }
 
   function renderBoard() {
-    const conflicts = findSudokuConflicts(values);
-    for (const [index, { cell, button }] of cells.entries()) {
+    const locked = complete || showingSolution;
+    const chosenValue = values[selected];
+    const incorrect = checked && Boolean(chosenValue) && chosenValue !== solution[selected];
+    for (const [index, { cell, button, numeral }] of cells.entries()) {
       const fixed = Boolean(current.givens[index]);
       const isSelected = index === selected;
-      const invalid = conflicts.has(index) || checked.has(index);
-      const value = values[index];
+      const invalid = isSelected && incorrect;
+      const value = showingSolution ? solution[index] : values[index];
       const markedDigits = value ? [] : digits.filter((digit) => notes[index] & (1 << (digit - 1)));
       cell.setAttribute('aria-selected', String(isSelected));
-      cell.setAttribute('aria-readonly', String(fixed || complete));
+      cell.setAttribute('aria-readonly', String(fixed || locked));
       button.tabIndex = isSelected ? 0 : -1;
       button.classList.toggle('is-given', fixed);
       button.classList.toggle('is-conflict', invalid);
@@ -103,19 +110,30 @@ export function createSudokuView() {
         annotation.setAttribute('aria-hidden', 'true');
         for (const digit of digits) {
           const mark = document.createElement('span');
-          if (markedDigits.includes(digit)) mark.textContent = digit;
+          if (markedDigits.includes(digit)) renderPuzzleMark(mark, digit, true);
           annotation.append(mark);
         }
         button.replaceChildren(annotation);
       } else {
-        button.textContent = value || '';
+        renderPuzzleMark(numeral, value, !fixed && !showingSolution);
+        if (numeral.parentNode !== button) button.replaceChildren(numeral);
       }
     }
-    for (const button of [...numberKeys, noteButton, eraseButton, checkButton]) button.disabled = complete;
+    for (const button of [...numberKeys, noteButton, eraseButton, checkButton]) button.disabled = locked;
+    board.classList.toggle('showing-solution', showingSolution);
+    solutionButton.setAttribute('aria-pressed', String(showingSolution));
+    solutionButton.textContent = showingSolution ? 'hide solution' : 'show solution';
+
+    let message = '';
+    if (showingSolution) message = 'showing the solution.';
+    else if (complete) message = 'puzzle complete.';
+    else if (checked && !chosenValue) message = 'enter a number in this cell first.';
+    else if (checked) message = incorrect ? 'this cell needs review.' : 'this cell is correct.';
+    if (feedback.textContent !== message) feedback.textContent = message;
 
     const nextLink = $('sudoku-next');
-    nextLink.hidden = !complete;
-    if (complete) {
+    nextLink.hidden = !complete || Boolean(shared);
+    if (!nextLink.hidden) {
       const next = puzzles.slice(puzzles.indexOf(current) + 1).find((puzzle) => !progress[puzzle.id]?.complete);
       nextLink.href = next ? puzzleLink(next) : '#sudoku';
       nextLink.textContent = next ? 'next puzzle' : 'back to levels';
@@ -133,7 +151,15 @@ export function createSudokuView() {
   }
 
   function enter(digit) {
-    if (!current || complete || current.givens[selected]) return;
+    if (!current || complete || showingSolution || current.givens[selected]) return;
+    if (shared) {
+      checked = false;
+      shared.send(digit && takingNotes
+        ? { type: 'note', index: selected, digit }
+        : { type: 'cell', index: selected, value: digit });
+      renderBoard();
+      return;
+    }
     if (digit && takingNotes) {
       if (values[selected]) return;
       notes[selected] ^= 1 << (digit - 1);
@@ -141,20 +167,30 @@ export function createSudokuView() {
       values[selected] = digit;
       notes[selected] = 0;
     }
-    checked.clear();
+    checked = false;
     complete = solution.every((value, index) => value === values[index]);
     save();
     renderBoard();
-    $('sudoku-feedback').textContent = complete ? 'puzzle complete.' : '';
   }
 
   function select(index, focus = false) {
+    if (selected !== index) checked = false;
     selected = index;
     renderBoard();
     if (focus) cells[index].button.focus({ preventScroll: true });
   }
 
-  function open(id = '') {
+  function readRoomState(state) {
+    ({ values, notes, complete } = state);
+  }
+
+  function updateRoom(state) {
+    if (state.values[selected] !== values[selected]) checked = false;
+    readRoomState(state);
+    renderBoard();
+  }
+
+  function open(id = '', room) {
     const puzzle = puzzles.find((puzzle) => puzzle.id === id);
     $('sudoku-lobby').hidden = Boolean(puzzle);
     $('sudoku-game').hidden = !puzzle;
@@ -164,21 +200,26 @@ export function createSudokuView() {
       return;
     }
 
-    if (puzzle !== current) {
+    checked = false;
+    showingSolution = false;
+    if (puzzle !== current || shared !== room) {
       current = puzzle;
+      shared = room;
       solution = solveSudoku(puzzle.givens).solution;
-      const saved = progress[id];
-      values = puzzle.givens.map((given, index) => given || numberInRange(saved?.values?.[index], 9));
-      notes = values.map((value, index) => value ? 0 : numberInRange(saved?.notes?.[index], 511));
-      complete = solution.every((value, index) => value === values[index]);
+      if (shared) readRoomState(shared.state);
+      else {
+        Object.assign(progress, readProgress());
+        const saved = progress[id];
+        values = puzzle.givens.map((given, index) => given || numberInRange(saved?.values?.[index], 9));
+        notes = values.map((value, index) => value ? 0 : numberInRange(saved?.notes?.[index], 511));
+        complete = solution.every((value, index) => value === values[index]);
+      }
       selected = puzzle.givens.findIndex((value) => value === 0);
       takingNotes = false;
       noteButton.setAttribute('aria-pressed', 'false');
-      checked = new Set();
     }
     const number = puzzles.indexOf(puzzle) + 1;
     $('sudoku-game-meta').textContent = puzzle.difficulty + ' · puzzle ' + number + ' of ' + puzzles.length;
-    $('sudoku-feedback').textContent = complete ? 'puzzle complete.' : '';
     renderBoard();
     $('sudoku-game-title').focus({ preventScroll: true });
   }
@@ -194,9 +235,12 @@ export function createSudokuView() {
       const button = document.createElement('button');
       button.type = 'button';
       button.addEventListener('click', () => select(index));
+      const numeral = document.createElement('span');
+      numeral.setAttribute('aria-hidden', 'true');
+      button.append(numeral);
       cell.append(button);
       row.append(cell);
-      cells.push({ cell, button });
+      cells.push({ cell, button, numeral });
     }
     board.append(row);
   }
@@ -216,10 +260,12 @@ export function createSudokuView() {
   });
   eraseButton.addEventListener('click', () => enter(0));
   checkButton.addEventListener('click', () => {
-    checked = new Set(values.flatMap((value, index) => value && value !== solution[index] ? [index] : []));
-    $('sudoku-feedback').textContent = checked.size
-      ? checked.size + (checked.size === 1 ? ' cell needs review.' : ' cells need review.')
-      : 'no mistakes in the filled cells.';
+    checked = true;
+    renderBoard();
+  });
+  solutionButton.addEventListener('click', () => {
+    checked = false;
+    showingSolution = !showingSolution;
     renderBoard();
   });
   board.addEventListener('keydown', (event) => {
@@ -237,5 +283,5 @@ export function createSudokuView() {
     event.preventDefault();
   });
 
-  return { open };
+  return { open, updateRoom };
 }

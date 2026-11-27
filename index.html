@@ -3,18 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#eae9e2">
-  <meta name="description" content="a quiet place for jigsaws, sudoku and russian arrow crosswords.">
-  <title>puzzlemood — jigsaws, sudoku and arrow crosswords</title>
-  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=scanword-zoom">
-  <script type="module" src="./src/app.js?v=scanword-zoom"></script>
+  <meta name="theme-color" content="#eeeff0">
+  <meta name="description" content="a quiet place for jigsaws, sudoku, arrow crosswords and word searches.">
+  <title>puzzlemood — jigsaws, sudoku, arrow crosswords and word searches</title>
+  <link rel="icon" href="./assets/favicon.svg?v=cool-gray" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=puzzle-layout">
+  <script type="module" src="./src/app.js?v=puzzle-layout"></script>
 </head>
 <body>
   <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <symbol id="i-library" viewBox="0 0 24 24"><rect x="6" y="3" width="15" height="15" rx="2"/><path d="M17 21H5a2 2 0 0 1-2-2V7m3 8 4-4 3 3 3-3 5 5"/><circle cx="15.5" cy="7.5" r="1"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-4 4 4-4 4 4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-4-4 4 4 4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m3 17 5-5 4 4 4-5 5 6"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.55.83l9.5-6.5a1 1 0 0 0 0-1.66l-9.5-6.5A1 1 0 0 0 8 5.5Z" fill="currentColor" stroke-width="0"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
@@ -39,13 +40,13 @@
         <div class="hero-copy">
           <p class="hero-note">puzzles &amp; pastimes</p>
           <h1 id="home-title" tabindex="-1">a little<br><em>time to play.</em></h1>
-          <p class="hero-description">a quiet place for jigsaws, sudoku and arrow crosswords.</p>
+          <p class="hero-description">a quiet place for jigsaws, sudoku, arrow crosswords and word searches.</p>
           <div class="hero-actions">
             <a class="button primary" href="#games">browse games</a>
             <a id="home-resume" class="button text-button" href="#play" hidden>resume puzzle</a>
           </div>
         </div>
-        <figure class="hero-print home-photo">
+        <figure class="home-photo">
           <img src="./assets/coffee-and-pages.jpg" width="736" height="981" fetchpriority="high"
             alt="a cup of coffee beside an open notebook and books">
         </figure>
@@ -77,8 +78,20 @@
             </div>
             <img class="directory-cover" src="./assets/scanwords/pencil-and-paper.webp" width="736" height="736" alt="" loading="lazy">
           </a>
+          <a class="directory-link directory-wordsearch" href="#wordsearch">
+            <div>
+              <h3>word searches</h3>
+              <p class="directory-description">follow the letters in english or russian.</p>
+            </div>
+            <div class="wordsearch-cover" aria-hidden="true">
+              <span>w</span><span>o</span><span>r</span><span>s</span><span>k</span><span>a</span>
+              <span>e</span><span>l</span><span>d</span><span>s</span><span>e</span><span>r</span>
+              <span>ф</span><span>и</span><span>л</span><span>в</span><span>о</span><span>т</span>
+              <span>e</span><span>у</span><span>м</span><span>п</span><span>р</span><span>д</span>
+            </div>
+          </a>
         </div>
-        <p class="directory-planned"><span class="caption">planned</span> chess and word searches.</p>
+        <p class="directory-planned"><span class="caption">planned</span> chess.</p>
       </section>
     </section>
 
@@ -125,6 +138,10 @@
           <h1 id="sudoku-game-title" tabindex="-1">sudoku</h1>
           <p id="sudoku-game-meta" class="caption"></p>
         </div>
+        <div id="sudoku-room-actions" class="room-actions">
+          <button class="button secondary" type="button" data-room-create="sudoku" hidden>play together</button>
+          <p class="game-message" role="status" hidden></p>
+        </div>
         <div class="sudoku-play">
           <div id="sudoku-board" class="sudoku-board" role="grid" aria-label="sudoku board" aria-describedby="sudoku-keys"></div>
           <div class="sudoku-controls">
@@ -132,7 +149,8 @@
             <div class="sudoku-tools" role="group" aria-label="sudoku tools">
               <button id="sudoku-notes" class="button secondary" type="button" aria-pressed="false">notes</button>
               <button id="sudoku-erase" class="button secondary" type="button">erase</button>
-              <button id="sudoku-check" class="button secondary" type="button">check</button>
+              <button id="sudoku-check" class="button secondary" type="button">check cell</button>
+              <button id="sudoku-solution" class="button secondary" type="button" aria-pressed="false">show solution</button>
             </div>
             <p id="sudoku-feedback" class="game-message" role="status"></p>
             <a id="sudoku-next" class="button primary" href="#sudoku" hidden>next puzzle</a>
@@ -172,49 +190,121 @@
             <h2 id="scanwords-editions-title">выбрать сканворд</h2>
             <p id="scanwords-total" class="caption"></p>
           </div>
+          <p class="scanwords-series-help">в сканвордах с кодом буквы из отмеченных клеток открывают следующий выпуск.</p>
+          <p id="scanwords-locked" class="game-message" role="status" tabindex="-1"></p>
           <div id="scanwords-options" class="scanwords-options"></div>
-          <a id="scanwords-start" class="button primary" href="#scanwords/1" hidden>начать сканворд 1</a>
+          <a id="scanwords-start" class="button primary" href="#scanwords/9" hidden>начать сканворд 9</a>
+          <details class="scanwords-compact">
+            <summary>короткие сканворды</summary>
+            <div id="scanwords-compact-options" class="scanwords-options"></div>
+          </details>
         </section>
       </div>
 
       <div id="scanwords-game" hidden>
-        <div class="page-heading game-page-heading">
+        <div class="scanwords-heading">
           <a class="back-link" href="#scanwords"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>все сканворды</a>
           <h1 id="scanwords-game-title" tabindex="-1">сканворд</h1>
           <p id="scanwords-solved" class="caption"></p>
         </div>
+        <div id="scanwords-room-actions" class="room-actions">
+          <button class="button secondary" type="button" data-room-create="scanwords" hidden>играть вместе</button>
+          <p class="game-message" role="status" hidden></p>
+        </div>
         <div class="scanwords-workspace">
-          <section class="scanwords-active-clue" aria-label="выбранный вопрос">
-            <p id="scanwords-clue-number" class="caption"></p>
-            <p id="scanwords-clue-question" aria-live="polite"></p>
-            <div class="scanwords-actions" role="group" aria-label="переход между вопросами">
-              <button id="scanwords-prev-clue" class="button secondary" type="button">предыдущий</button>
-              <button id="scanwords-next-clue" class="button secondary" type="button">следующий</button>
-            </div>
-          </section>
-          <div class="scanwords-sheet">
-            <div class="scanwords-scale">
-              <span class="caption">масштаб</span>
-              <div class="zoom-tools" role="group" aria-label="масштаб сетки">
-                <button id="scanwords-zoom-out" type="button" aria-label="уменьшить масштаб" title="уменьшить масштаб"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg></button>
-                <button id="scanwords-zoom-reset" class="zoom-reset" type="button" aria-label="сбросить масштаб" title="сбросить масштаб">100%</button>
-                <button id="scanwords-zoom-in" type="button" aria-label="увеличить масштаб" title="увеличить масштаб"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+          <div class="scanwords-top">
+            <section class="scanwords-active-clue" aria-label="выбранный вопрос">
+              <p id="scanwords-clue-number" class="caption"></p>
+              <div class="scanword-clue-nav" role="group" aria-label="переход между вопросами">
+                <button id="scanwords-prev-clue" type="button" aria-label="предыдущий вопрос"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+                <button id="scanwords-next-clue" type="button" aria-label="следующий вопрос"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
               </div>
+              <p id="scanwords-clue-question" aria-live="polite"></p>
+            </section>
+            <div class="scanwords-controls">
+              <div class="scanwords-toolbar">
+                <div class="zoom-tools" role="group" aria-label="масштаб сетки">
+                  <button id="scanwords-zoom-out" type="button" aria-label="уменьшить масштаб" title="уменьшить масштаб"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg></button>
+                  <button id="scanwords-zoom-reset" class="zoom-reset" type="button" aria-label="вписать поле целиком" title="вписать поле целиком">100%</button>
+                  <button id="scanwords-zoom-in" type="button" aria-label="увеличить масштаб" title="увеличить масштаб"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+                </div>
+                <div class="scanwords-actions" role="group" aria-label="действия с ответами">
+                  <button id="scanwords-erase" class="button secondary" type="button">стереть</button>
+                  <button id="scanwords-answers" class="button secondary" type="button" aria-pressed="false">ответы</button>
+                  <button id="scanwords-code-open" class="button secondary" type="button" aria-haspopup="dialog" aria-controls="scanwords-code-dialog" aria-label="кодовое слово" hidden>код</button>
+                </div>
+              </div>
+              <p id="scanwords-feedback" class="game-message" role="status"></p>
+              <a id="scanwords-next" class="button primary" href="#scanwords" hidden>следующий сканворд</a>
+              <p id="scanwords-help" class="game-keys-hint">выберите клетку и вводите буквы на русской раскладке. повторное нажатие на пересечении меняет направление.</p>
             </div>
-            <div id="scanwords-scroll" class="scanwords-scroll" role="region" tabindex="0" aria-label="прокручиваемое поле сканворда">
+          </div>
+          <div class="scanwords-sheet">
+            <div id="scanwords-scroll" class="scanwords-scroll" role="region" aria-label="поле сканворда">
               <div id="scanwords-grid" class="scanwords-grid" role="grid" aria-label="сетка сканворда" aria-describedby="scanwords-help"></div>
             </div>
+            <input id="scanwords-entry" class="visually-hidden" type="text" inputmode="text" aria-label="буква для выбранной клетки"
+              autocomplete="off" autocapitalize="off" spellcheck="false" tabindex="-1">
           </div>
-          <div class="scanwords-controls">
-            <div id="scanwords-keyboard" class="scanwords-keyboard" role="group" aria-label="русская клавиатура"></div>
-            <div class="scanwords-actions" role="group" aria-label="действия с ответами">
-              <button id="scanwords-erase" class="button secondary" type="button">стереть</button>
-              <button id="scanwords-answers" class="button secondary" type="button" aria-pressed="false">ответы</button>
-            </div>
-            <p id="scanwords-feedback" class="game-message" role="status"></p>
-            <a id="scanwords-next" class="button primary" href="#scanwords" hidden>следующий сканворд</a>
-            <p id="scanwords-help" class="game-keys-hint">нажмите на клетку со стрелкой, чтобы прочитать вопрос. повторное нажатие на клетку на пересечении меняет направление.</p>
+        </div>
+      </div>
+      <dialog id="scanwords-code-dialog" lang="ru" aria-labelledby="scanwords-code-title" aria-describedby="scanwords-code-help">
+        <div class="dialog-heading">
+          <h2 id="scanwords-code-title">кодовое слово</h2>
+          <form method="dialog"><button class="button secondary" type="submit" autofocus>закрыть</button></form>
+        </div>
+        <p id="scanwords-code-help">возьмите буквы из отмеченных клеток по порядку. нажмите на номер, чтобы перейти к клетке.</p>
+        <div id="scanwords-code-slots" class="scanwords-code-slots" role="group" aria-label="буквы кодового слова"></div>
+        <p id="scanwords-code-feedback" class="game-message" role="status"></p>
+        <div class="scanwords-code-actions">
+          <button id="scanwords-code-check" class="button primary" type="button">проверить код</button>
+          <a id="scanwords-code-next" class="button primary" href="#scanwords" hidden>дальше</a>
+        </div>
+      </dialog>
+    </section>
+
+    <section id="wordsearch-view" aria-label="word searches" hidden>
+      <div class="wordsearch-heading">
+        <div>
+          <a id="wordsearch-home" class="back-link" href="#games"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg><span>all games</span></a>
+          <a id="wordsearch-back" class="back-link" href="#wordsearch" hidden><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg><span></span></a>
+          <h1 id="wordsearch-title" tabindex="-1">word searches</h1>
+        </div>
+        <div id="wordsearch-room-actions" class="room-actions" hidden>
+          <button class="button secondary" type="button" data-room-create="wordsearch" hidden>play together</button>
+          <p class="game-message" role="status" hidden></p>
+        </div>
+        <nav id="wordsearch-languages" class="wordsearch-languages" aria-label="puzzle language">
+          <a href="#wordsearch/en" lang="en">english</a>
+          <a href="#wordsearch/ru" lang="ru">русский</a>
+        </nav>
+      </div>
+      <div id="wordsearch-lobby" class="wordsearch-lobby">
+        <p id="wordsearch-intro"></p>
+        <div id="wordsearch-puzzles" class="wordsearch-puzzles"></div>
+        <figure class="photo-collage wordsearch-collage" aria-hidden="true">
+          <img class="collage-print wordsearch-print-pen" src="./assets/wordsearch/blue-pen.webp" width="736" height="981" alt="" loading="lazy">
+          <img class="collage-print wordsearch-print-earphones" src="./assets/wordsearch/earphones.webp" width="736" height="981" alt="" loading="lazy">
+          <img class="collage-print wordsearch-print-coffee" src="./assets/wordsearch/coffee.webp" width="736" height="1030" alt="" loading="lazy">
+          <img class="collage-print wordsearch-print-book" src="./assets/wordsearch/open-book.webp" width="736" height="981" alt="" loading="lazy">
+          <img class="collage-print wordsearch-print-evening" src="./assets/wordsearch/evening.webp" width="849" height="1060" alt="" loading="lazy">
+          <img class="collage-print wordsearch-print-doodles" src="./assets/wordsearch/doodles.webp" width="920" height="920" alt="" loading="lazy">
+        </figure>
+      </div>
+      <div id="wordsearch-game" class="wordsearch-game" hidden>
+        <div class="wordsearch-board">
+          <div class="wordsearch-paper">
+            <div id="wordsearch-grid" class="wordsearch-grid" role="grid" aria-describedby="wordsearch-help"></div>
+            <canvas id="wordsearch-ink" class="wordsearch-ink" aria-hidden="true"></canvas>
           </div>
+        </div>
+        <div class="wordsearch-notes">
+          <p id="wordsearch-progress" class="caption" role="status"></p>
+          <ul id="wordsearch-words" class="wordsearch-words" tabindex="0"></ul>
+          <button id="wordsearch-clear" class="button secondary" type="button"></button>
+          <p id="wordsearch-result" class="game-message" role="status" hidden></p>
+          <a id="wordsearch-next" class="button primary" href="#wordsearch" hidden></a>
+          <p id="wordsearch-help" class="game-keys-hint"></p>
         </div>
       </div>
     </section>
@@ -248,7 +338,7 @@
       </div>
 
       <aside id="resume-panel" class="resume-panel" hidden>
-        <div><strong id="resume-name"></strong><span id="resume-progress"></span></div>
+        <p id="resume-progress"></p>
         <a class="button secondary" href="#play"><svg class="icon"><use href="#i-play"/></svg>resume puzzle</a>
       </aside>
 
@@ -285,10 +375,7 @@
             <div class="source-info">
               <div class="source-image">
                 <img id="source-photo" src="./assets/quiet-afternoon.jpg" alt="" width="736" height="965" loading="lazy">
-              </div>
-              <div class="source-caption">
-                <span id="source-name">a quiet afternoon</span>
-                <button id="reset-photo" class="icon-button" type="button" title="restore the gallery image" aria-label="restore the gallery image" hidden><svg class="icon"><use href="#i-close"/></svg></button>
+                <button id="reset-photo" class="icon-button" type="button" title="restore the gallery image" aria-label="restore the gallery image" hidden><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
               </div>
             </div>
             <input id="file" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif,.jpg,.jpeg,.png,.webp,.avif,.gif" hidden>
@@ -312,6 +399,9 @@
             </fieldset>
             <div class="setup-footer">
               <button id="start-game" class="button primary" type="button"><span>start puzzle</span></button>
+              <button class="button secondary" type="button" data-room-create="jigsaw" hidden>play together</button>
+              <p id="room-photo-help" hidden>choose a gallery photo to play together.</p>
+              <p class="game-message" role="status" hidden></p>
               <p>finished puzzles are saved in this browser.</p>
             </div>
           </div>
@@ -320,33 +410,36 @@
     </section>
 
     <section id="play-view" aria-labelledby="game-title" hidden>
-      <div class="page-heading game-heading">
-        <div>
-          <a class="back-link" href="#setup"><svg class="icon"><use href="#i-chevron"/></svg>back to setup</a>
-          <h1 id="game-title" class="visually-hidden" tabindex="-1">puzzle board</h1>
-          <p id="game-level"></p>
+      <div class="game-chrome">
+        <div class="page-heading game-heading">
+          <div>
+            <a class="back-link" href="#setup"><svg class="icon"><use href="#i-chevron"/></svg>back to setup</a>
+            <h1 id="game-title" class="visually-hidden" tabindex="-1">puzzle board</h1>
+            <p id="game-level"></p>
+          </div>
+          <div class="game-progress">
+            <span id="game-count" aria-live="polite"></span>
+            <progress id="game-progress" aria-label="puzzle progress"></progress>
+          </div>
         </div>
-        <div class="game-progress">
-          <span id="game-count" aria-live="polite"></span>
-          <progress id="game-progress" aria-label="puzzle progress"></progress>
-        </div>
-      </div>
-      <div class="game-room">
+        <div id="jigsaw-room-actions" class="room-actions"></div>
         <div class="game-toolbar" aria-label="puzzle tools">
           <div class="game-tools">
             <button id="toggle-guide" class="button secondary tool-button" type="button" aria-pressed="false"><svg class="icon"><use href="#i-image"/></svg><span>reference</span></button>
             <button id="toggle-edges" class="button secondary tool-button" type="button" aria-pressed="false"><svg class="icon"><use href="#i-edges"/></svg><span>edges only</span></button>
-            <button id="shuffle" class="button secondary tool-button" type="button" title="shuffle the remaining pieces"><svg class="icon"><use href="#i-shuffle"/></svg><span>shuffle</span></button>
+            <button id="shuffle" class="button secondary tool-button" type="button" title="shuffle the unjoined pieces into the tray"><svg class="icon"><use href="#i-shuffle"/></svg><span>shuffle</span></button>
           </div>
           <div class="game-tools">
             <div class="zoom-tools" role="group" aria-label="puzzle board zoom">
               <button id="zoom-out" type="button" aria-label="zoom out" title="zoom out"><svg class="icon"><use href="#i-minus"/></svg></button>
-              <button id="zoom-reset" class="zoom-reset" type="button" aria-label="reset zoom" title="reset zoom">100%</button>
+              <button id="zoom-reset" class="zoom-reset" type="button" aria-label="fit and center the frame" title="fit and center the frame">100%</button>
               <button id="zoom-in" type="button" aria-label="zoom in" title="zoom in"><svg class="icon"><use href="#i-plus"/></svg></button>
             </div>
             <button id="toggle-sound" class="button secondary tool-button" type="button" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg><span>sound</span></button>
           </div>
         </div>
+      </div>
+      <div class="game-room">
         <div class="workspace">
           <canvas id="board" tabindex="0" aria-label="puzzle board" aria-describedby="game-help game-keys"></canvas>
           <div id="finish-panel" class="finish-panel" hidden>
@@ -360,10 +453,32 @@
             </div>
           </div>
         </div>
-        <p id="game-help" class="game-help">drag a piece into the frame. when zoomed in, drag the empty space to move the board.</p>
-        <p id="game-keys" class="visually-hidden">use Page Up and Page Down to select a piece, the arrow keys to move around the frame, and Enter to place the piece.</p>
+        <div id="piece-rack" class="piece-rack" role="group" aria-label="piece tray" hidden>
+          <button id="tray-back" class="tray-arrow" type="button" aria-label="previous pieces" aria-controls="piece-tray"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+          <div class="piece-rack-content">
+            <div id="piece-tray" class="piece-tray"></div>
+            <p id="tray-empty" class="tray-empty" hidden></p>
+          </div>
+          <button id="tray-next" class="tray-arrow" type="button" aria-label="next pieces" aria-controls="piece-tray"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+        </div>
+        <p id="game-help" class="game-help">matching pieces snap together anywhere. drag pieces back to the tray to set them aside.</p>
+        <p id="game-keys" class="visually-hidden">use Page Up and Page Down to select a piece, the arrow keys to move around the frame, Enter to place the piece, and Delete to return it to the tray.</p>
         <p id="game-feedback" class="visually-hidden" aria-live="polite"></p>
         <p id="game-error" class="error game-error" role="alert" hidden></p>
+      </div>
+    </section>
+
+    <section id="room-view" aria-labelledby="room-title" hidden>
+      <div class="page-heading">
+        <a class="back-link" href="#games"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>all games</a>
+        <h1 id="room-title" tabindex="-1">shared game</h1>
+        <p id="room-error" role="status"></p>
+        <button class="button secondary" id="retry-room" type="button" hidden>try again</button>
+      </div>
+      <div id="room-controls" hidden>
+        <button id="copy-room-link" type="button" class="button secondary">copy invite link</button>
+        <p id="room-connection" class="caption" role="status"></p>
+        <input id="room-link" type="url" readonly hidden>
       </div>
     </section>
 
@@ -372,6 +487,7 @@
         <h1 id="library-title" tabindex="-1">my collection</h1>
         <p>your finished puzzles.</p>
       </div>
+      <p id="library-loading" class="game-message" role="status" hidden>loading your collection…</p>
       <div id="library-empty" class="library-empty" hidden>
         <span class="empty-mark"><svg class="icon"><use href="#i-library"/></svg></span>
         <h2>nothing here yet</h2>
@@ -384,13 +500,23 @@
   </main>
 
   <footer class="site-footer wrap"><a class="footer-brand" href="#home">puzzlemood.</a><span id="footer-progress">your progress stays in this browser</span></footer>
-  <dialog id="preview-dialog" aria-labelledby="preview-title">
+  <dialog id="preview-dialog" class="collection-dialog" aria-labelledby="preview-title">
     <div class="dialog-heading">
-      <h2 id="preview-title"></h2>
+      <h2 id="preview-title">assembled puzzle</h2>
       <button id="close-preview" class="icon-button" type="button" aria-label="close"><svg class="icon"><use href="#i-close"/></svg></button>
     </div>
-    <img id="preview-photo" alt="">
-    <a id="preview-download" class="button primary" download><svg class="icon"><use href="#i-download"/></svg>download image</a>
+    <p id="preview-status" class="game-message" role="status" hidden></p>
+    <img id="preview-photo" alt="" hidden>
+    <a id="preview-download" class="button primary" download hidden><svg class="icon"><use href="#i-download"/></svg>download original photo</a>
+  </dialog>
+  <dialog id="delete-puzzle-dialog" class="collection-dialog" aria-labelledby="delete-puzzle-title" aria-describedby="delete-puzzle-help">
+    <div class="dialog-heading"><h2 id="delete-puzzle-title">delete puzzle?</h2></div>
+    <p id="delete-puzzle-help"></p>
+    <p id="delete-puzzle-error" class="error" role="alert" hidden></p>
+    <form id="delete-puzzle-form" class="delete-puzzle-actions">
+      <button id="cancel-puzzle-delete" class="button secondary" type="button" autofocus>cancel</button>
+      <button id="confirm-puzzle-delete" class="button primary" type="submit">delete puzzle</button>
+    </form>
   </dialog>
   <canvas id="drag-layer" aria-hidden="true" hidden></canvas>
 </body>

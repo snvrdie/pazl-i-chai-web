@@ -1,49 +1,32 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createDesk, spreadPieces } from '../src/desk.js';
+import { constrainPan, fitPuzzle } from '../src/desk.js';
 import { createPuzzle, levels } from '../src/puzzle.js';
 
-test('every piece starts fully visible outside the frame, even at 192 pieces on mobile', () => {
-  const viewports = [[1360, 756], [360, 590], [320, 440]];
-  const images = [[1536, 1024], [900, 1200], [1600, 200], [200, 1600]];
-  for (const [viewWidth, viewHeight] of viewports) {
-    for (const [width, height] of images) {
+test('the frame uses the same space regardless of how many pieces are in the tray', () => {
+  for (const [viewWidth, viewHeight] of [[1360, 650], [360, 480], [320, 400]]) {
+    for (const [width, height] of [[1536, 1024], [900, 1200], [1600, 200], [200, 1600]]) {
+      const fit = fitPuzzle(createPuzzle(width, height, 'easy', 47), viewWidth, viewHeight);
+      assert.ok(width * fit < viewWidth && height * fit < viewHeight);
+      assert.ok(Math.max(width * fit / viewWidth, height * fit / viewHeight) >= .83);
       for (const level of Object.keys(levels)) {
-        const puzzle = createPuzzle(width, height, level, 47);
-        const desk = createDesk(puzzle, viewWidth, viewHeight);
-        const order = puzzle.pieces.map(({ id }) => id);
-        const spread = [...spreadPieces(desk, order, 47).values()];
-        assert.equal(spread.length, order.length);
-        const pad = Math.min(puzzle.cellWidth, puzzle.cellHeight) * .28;
-        const boxes = spread.map(({ x, y }) => ({
-          l: x - pad,
-          r: x + puzzle.cellWidth + pad,
-          t: y - pad,
-          b: y + puzzle.cellHeight + pad,
-        }));
-        for (const [i, box] of boxes.entries()) {
-          assert.ok(box.l >= desk.left && box.r <= desk.right);
-          assert.ok(box.t >= desk.top && box.b <= desk.bottom);
-          assert.ok(box.r < 0 || box.l > width || box.b < 0 || box.t > height);
-          for (const other of boxes.slice(i + 1)) {
-            assert.ok(box.r <= other.l || box.l >= other.r || box.b <= other.t || box.t >= other.b);
-          }
-        }
+        assert.equal(fitPuzzle(createPuzzle(width, height, level, 47), viewWidth, viewHeight), fit);
       }
     }
   }
 });
 
-test('desktop layouts use all four sides and resume with the same scatter', () => {
-  const puzzle = createPuzzle(1536, 1024, 'easy', 42);
-  const order = puzzle.pieces.map(({ id }) => id);
-  const desk = createDesk(puzzle, 1360, 756);
-  const pieces = spreadPieces(desk, order, 42);
-  assert.deepEqual(pieces, spreadPieces(createDesk(puzzle, 1360, 756), order, 42));
-  const positions = [...pieces.values()];
-  assert.ok(positions.some(({ x }) => x < 0));
-  assert.ok(positions.some(({ x }) => x > puzzle.width));
-  assert.ok(positions.some(({ y }) => y < 0));
-  assert.ok(positions.some(({ y }) => y > puzzle.height));
-  assert.notDeepEqual(pieces, spreadPieces(desk, [...order].reverse(), 42));
+test('panning can reveal pieces saved well beyond the frame', () => {
+  const puzzle = createPuzzle(1200, 900, 'medium', 47);
+  const width = 360;
+  const height = 480;
+  const scale = fitPuzzle(puzzle, width, height);
+  const view = { width, height, scale };
+  const position = { x: -puzzle.width * 2, y: puzzle.height * 2 };
+  const pan = constrainPan(puzzle, view, new Map([[0, position]]), { x: Infinity, y: -Infinity });
+  const left = (width - puzzle.width * scale) / 2 + pan.x + position.x * scale;
+  const top = (height - puzzle.height * scale) / 2 + pan.y + position.y * scale;
+  assert.ok(left >= 0 && left + puzzle.cellWidth * scale <= width);
+  assert.ok(top >= 0 && top + puzzle.cellHeight * scale <= height);
+  assert.deepEqual(constrainPan(puzzle, view, new Map(), { x: 0, y: 0 }), { x: 0, y: 0 });
 });
